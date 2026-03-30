@@ -91,10 +91,8 @@ class CRUDListing(CRUDBase[Listing]):
             db.add(view)
             db.commit()
             db.refresh(view)
-            print(f"✅ Просмотр зарегистрирован: listing_id={listing_id}, user_id={user_id}")
             return view
-        except Exception as e:
-            print(f"❌ Ошибка регистрации просмотра: {e}")
+        except Exception:
             db.rollback()
             return None
 

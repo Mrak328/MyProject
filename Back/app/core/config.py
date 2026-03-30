@@ -17,11 +17,11 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
 
     # Загрузка файлов
     UPLOAD_DIR: str = "static/photos"
-    MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5 MB
+    MAX_FILE_SIZE: int = 5 * 1024 * 1024
     ALLOWED_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
 
     class Config:

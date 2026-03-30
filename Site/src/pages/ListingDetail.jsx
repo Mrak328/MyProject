@@ -96,7 +96,7 @@ function ListingDetail() {
                     <div className="main-photo-container">
                         {photos.length > 0 ? (
                             <img
-                                src={photos[selectedPhoto]?.file_url || photos[selectedPhoto]}
+                                //src={photos[selectedPhoto]?.file_url || photos[selectedPhoto]}
                                 alt={listing.title}
                                 className="main-photo"
                                 onError={(e) => {
@@ -134,7 +134,7 @@ function ListingDetail() {
                                     onClick={() => setSelectedPhoto(index)}
                                 >
                                     <img
-                                        src={photo.file_url || photo}
+                                        //src={photo.file_url || photo}
                                         alt={`Фото ${index + 1}`}
                                         onError={(e) => {
                                             e.target.src = 'https://via.placeholder.com/100x100?text=Фото';

@@ -46,7 +46,7 @@ function ListingCard({ listing }) {
             <Link to={`/listing/${listing.listing_id}`}>
                 <div className="card-image-container">
                     <img
-                        src={currentPhoto}
+                        //src={currentPhoto}
                         alt={listing.title}
                         className="card-image"
                         onError={(e) => {

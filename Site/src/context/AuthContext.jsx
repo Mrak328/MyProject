@@ -10,10 +10,10 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Проверка авторизации при загрузке
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('token');
+
             if (token) {
                 setAuthToken(token);
                 const userData = await checkAuth();
@@ -28,33 +28,37 @@ export const AuthProvider = ({ children }) => {
         initAuth();
     }, []);
 
-    // Вход
-const login = async (emailOrPhone, password) => {
-    setError(null);
-    try {
-        const data = await apiLogin(emailOrPhone, password);
-        const { access_token } = data;
+    const login = async (emailOrPhone, password) => {
+        setError(null);
+        try {
+            const data = await apiLogin(emailOrPhone, password);
+            const { access_token } = data;
 
-        localStorage.setItem('token', access_token);
-        setAuthToken(access_token);
+            localStorage.setItem('token', access_token);
+            setAuthToken(access_token);
 
-        const userData = await checkAuth();
-        setUser(userData);
-        return true;
-    } catch (err) {
-        setError(err.response?.data?.detail || 'Ошибка входа');
-        return false;
-    }
-};
+            const userData = await checkAuth();
 
-    // Выход
+            if (userData) {
+                setUser(userData);
+                return true;
+            }
+            return false;
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Ошибка входа');
+            return false;
+        }
+    };
+
     const logout = () => {
         apiLogout();
         setUser(null);
     };
 
-    // Проверка на админа
+    // Проверки ролей
     const isAdmin = user?.role_id === 1;
+    const isModerator = user?.role_id === 2;
+    const isUser = user?.role_id === 3;
 
     return (
         <AuthContext.Provider value={{
@@ -64,6 +68,8 @@ const login = async (emailOrPhone, password) => {
             login,
             logout,
             isAdmin,
+            isModerator,
+            isUser,
             isAuthenticated: !!user
         }}>
             {children}
