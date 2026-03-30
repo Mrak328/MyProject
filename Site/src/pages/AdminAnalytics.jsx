@@ -24,35 +24,21 @@ function AdminAnalytics() {
     setError(null);
 
     try {
-      // Загружаем все эндпоинты
-      const requests = [
-        API.get('/analytics/analytics/dashboard?days=30'),
-        API.get(`/analytics/analytics/listings/popular?period=${period}&limit=10`),
-        API.get('/analytics/analytics/search/queries?days=7'),
-        API.get('/analytics/analytics/prices'),
-        API.get(`/analytics/analytics/views?period=${period}`),
-      ];
-
-      // Добавляем closed_deals только для недели и месяца (не для дня)
-      if (period !== 'day') {
-        requests.push(API.get(`/analytics/analytics/closed_deals?period=${period}`));
-      } else {
-        // Если день - добавляем заглушку
-        requests.push(Promise.resolve({ data: {
-          total_closed: 0,
-          total_revenue: 0,
-          avg_days_to_sell: 0,
-          by_type: []
-        }}));
-      }
-
-      const [dashboardData, popularData, searchData, priceData, viewsData, closedData] = await Promise.all(requests);
+      // ПРАВИЛЬНЫЕ URL - без двойного /analytics/
+      const [dashboardData, popularData, searchData, viewsData, priceData, closedData] = await Promise.all([
+        API.get('/analytics/dashboard?days=30'),
+        API.get(`/analytics/listings/popular?period=${period}&limit=10`),
+        API.get('/analytics/search/queries?days=7'),
+        API.get(`/analytics/views?period=${period}`),
+        API.get('/analytics/prices'),
+        API.get(`/analytics/closed_deals?period=${period}`)
+      ]);
 
       setDashboard(dashboardData.data);
       setPopularListings(popularData.data || []);
       setSearchQueries(searchData.data?.popular_queries || []);
-      setPriceStats(priceData.data);
       setViewsStats(viewsData.data);
+      setPriceStats(priceData.data);
       setClosedDeals(closedData.data);
 
     } catch (err) {

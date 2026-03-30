@@ -1,279 +1,189 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
-from app import crud, schemas
+from app.crud.listing import listing_crud
+from app.crud.photo import photo_crud
+from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
+from app.schemas.common import MessageResponse
+from app.core.dependencies import get_current_user_optional
+from app.models import Users
 
-router = APIRouter()
+router = APIRouter(prefix="/listings", tags=["listings"])
 
 
-@router.get("/", response_model=List[schemas.Listing])
-async def get_all_listings(
+@router.get("/", response_model=List[ListingResponse])
+async def get_listings(
         skip: int = Query(0, ge=0),
         limit: int = Query(50, ge=1, le=100),
-        db: Session = Depends(get_db)
-):
-    """
-    Получить все активные объявления (для главной)
-    """
-    listings = crud.get_active_listings(db, skip=skip, limit=limit)
-    return listings
-
-
-@router.get("/search", response_model=List[schemas.Listing])
-async def search_listings(
-        # Пагинация
-        skip: int = Query(0, ge=0),
-        limit: int = Query(50, ge=1, le=100),
-
-        # Фильтры
         city: Optional[str] = None,
-        deal_type: Optional[str] = None,
-        rooms: Optional[int] = None,
         min_price: Optional[float] = None,
         max_price: Optional[float] = None,
         db: Session = Depends(get_db)
 ):
-    """
-    Поиск по активным объявлениям с фильтрацией
-    """
-    query = db.query(models.Listing).filter(
-        models.Listing.listing_status_id == 1,
-        models.Listing.moderated == True
-    )
+    listings = listing_crud.get_active(db, skip=skip, limit=limit)
 
-    if city:
-        query = query.filter(models.Listing.address.ilike(f'%{city}%'))
-    if deal_type:
-        query = query.join(models.DealType).filter(models.DealType.name.ilike(f'%{deal_type}%'))
-    if rooms:
-        query = query.filter(models.Listing.title.ilike(f'%{rooms} комн%'))
-    if min_price:
-        query = query.filter(models.Listing.price >= min_price)
-    if max_price:
-        query = query.filter(models.Listing.price <= max_price)
+    result = []
+    for listing in listings:
+        photos = photo_crud.get_by_listing(db, listing.listing_id)
+        listing_dict = {
+            "listing_id": listing.listing_id,
+            "title": listing.title,
+            "description": listing.description,
+            "price": listing.price,
+            "address": listing.address,
+            "total_area": listing.total_area,
+            "property_type_id": listing.property_type_id,
+            "deal_type_id": listing.deal_type_id,
+            "user_id": listing.user_id,
+            "listing_status_id": listing.listing_status_id,
+            "views": listing.views,
+            "moderated": listing.moderated,
+            "publication_date": listing.publication_date,
+            "contact_phone": listing.contact_phone,
+            "contact_person": listing.contact_person,
+            "photos": [p.file_url for p in photos]
+        }
+        result.append(listing_dict)
 
-    return query.order_by(models.Listing.publication_date.desc()).offset(skip).limit(limit).all()
+    return result
 
-@router.get("/", response_model=List[schemas.Listing])
-async def search_listings(
-        # Пагинация
-        page: int = Query(1, ge=1),
-        page_size: int = Query(20, ge=1, le=50),
 
-        # Тип сделки
-        deal_type: Optional[str] = Query(None, description="sale/rent"),
-
-        # Параметры недвижимости
-        property_type: Optional[str] = Query(None, description="apartment/house/room"),
-        rooms: Optional[int] = Query(None, ge=1, le=10),
-
-        # Цена
-        min_price: Optional[float] = Query(None, ge=0),
-        max_price: Optional[float] = Query(None, ge=0),
-
-        # Площадь
-        min_area: Optional[float] = Query(None, ge=0),
-        max_area: Optional[float] = Query(None, ge=0),
-
-        # Локация
-        city: Optional[str] = None,
-        district: Optional[str] = None,
-        metro: Optional[str] = None,
-
-        # Сортировка
-        sort_by: str = Query("date_desc", description="price_asc/price_desc/date_desc/views_desc"),
-
+@router.get("/active", response_model=List[ListingResponse])
+async def get_active_listings(
+        skip: int = Query(0, ge=0),
+        limit: int = Query(50, ge=1, le=100),
         db: Session = Depends(get_db)
 ):
-    """
-    Поиск недвижимости с фильтрацией
-    - Продажа/аренда
-    - Квартиры/дома/комнаты
-    - Количество комнат
-    - Цена от и до
-    - Площадь от и до
-    - Город/район/метро
-    - Сортировка
-    """
-    skip = (page - 1) * page_size
+    listings = listing_crud.get_active(db, skip=skip, limit=limit)
 
-    listings = crud.search_listings(
-        db=db,
-        skip=skip,
-        limit=page_size,
-        deal_type=deal_type,
-        property_type=property_type,
-        rooms=rooms,
-        min_price=min_price,
-        max_price=max_price,
-        min_area=min_area,
-        max_area=max_area,
-        city=city,
-        district=district,
-        metro=metro,
-        sort_by=sort_by
-    )
+    result = []
+    for listing in listings:
+        photos = photo_crud.get_by_listing(db, listing.listing_id)
+        listing_dict = {
+            "listing_id": listing.listing_id,
+            "title": listing.title,
+            "description": listing.description,
+            "price": listing.price,
+            "address": listing.address,
+            "total_area": listing.total_area,
+            "property_type_id": listing.property_type_id,
+            "deal_type_id": listing.deal_type_id,
+            "user_id": listing.user_id,
+            "listing_status_id": listing.listing_status_id,
+            "views": listing.views,
+            "moderated": listing.moderated,
+            "publication_date": listing.publication_date,
+            "contact_phone": listing.contact_phone,
+            "contact_person": listing.contact_person,
+            "photos": [p.file_url for p in photos]
+        }
+        result.append(listing_dict)
 
-    return listings
+    return result
 
 
-@router.get("/{listing_id}", response_model=schemas.Listing)
-async def get_listing(
-        listing_id: int,
-        db: Session = Depends(get_db)
-):
-    """Детальная карточка объявления"""
-    listing = crud.get_listing(db, listing_id=listing_id)
+@router.get("/{listing_id}", response_model=ListingResponse)
+async def get_listing(listing_id: int, db: Session = Depends(get_db)):
+    listing = listing_crud.get(db, listing_id)
     if not listing:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
+        raise HTTPException(status_code=404, detail="Listing not found")
 
-    # Увеличиваем счетчик просмотров
-    crud.increment_listing_views(db, listing_id)
+    listing_crud.increment_views(db, listing_id)
 
-    return listing
+    photos = photo_crud.get_by_listing(db, listing_id)
 
-
-@router.get("/{listing_id}/photos", response_model=List[schemas.Photo])
-async def get_listing_photos(
-        listing_id: int,
-        db: Session = Depends(get_db)
-):
-    """Все фотографии объекта"""
-    return crud.get_photos_by_listing(db, listing_id)
-
-
-@router.get("/{listing_id}/contacts", response_model=dict)
-async def get_contacts(
-        listing_id: int,
-        db: Session = Depends(get_db)
-):
-    """
-    Контакты продавца (телефон)
-    - Доступно только после регистрации
-    - Логируем запрос контактов
-    """
-    listing = crud.get_listing(db, listing_id=listing_id)
-    if not listing:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-
-    # Логируем запрос контактов
-    crud.log_contact_request(db, listing_id)
-
-    return {
-        "phone": listing.contact_phone,
-        "person": listing.contact_person
+    response_data = {
+        "listing_id": listing.listing_id,
+        "title": listing.title,
+        "description": listing.description,
+        "price": listing.price,
+        "address": listing.address,
+        "total_area": listing.total_area,
+        "property_type_id": listing.property_type_id,
+        "deal_type_id": listing.deal_type_id,
+        "user_id": listing.user_id,
+        "listing_status_id": listing.listing_status_id,
+        "views": listing.views,
+        "moderated": listing.moderated,
+        "publication_date": listing.publication_date,
+        "contact_phone": listing.contact_phone,
+        "contact_person": listing.contact_person,
+        "photos": [p.file_url for p in photos]
     }
+
+    return response_data
+
+
+@router.post("/", response_model=ListingResponse)
+async def create_listing(listing: ListingCreate, db: Session = Depends(get_db)):
+    return listing_crud.create(db, listing)
+
+
+@router.put("/{listing_id}", response_model=ListingResponse)
+async def update_listing(
+        listing_id: int,
+        listing_update: ListingUpdate,
+        db: Session = Depends(get_db)
+):
+    listing = listing_crud.get(db, id=listing_id)
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    return listing_crud.update(db, db_obj=listing, obj_in=listing_update)
+
+
+@router.delete("/{listing_id}", response_model=MessageResponse)
+async def delete_listing(listing_id: int, db: Session = Depends(get_db)):
+    listing = listing_crud.delete(db, id=listing_id)
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    return MessageResponse(message="Listing deleted")
+
+
+@router.get("/{listing_id}/photos")
+async def get_listing_photos(listing_id: int, db: Session = Depends(get_db)):
+    photos = photo_crud.get_by_listing(db, listing_id)
+    return [{"photo_id": p.photo_id, "url": p.file_url, "title": p.title} for p in photos]
 
 
 @router.post("/{listing_id}/view")
 async def register_view(
         listing_id: int,
-        user_id: Optional[int] = None,
+        request: Request,
+        current_user: Optional[Users] = Depends(get_current_user_optional),
         db: Session = Depends(get_db)
 ):
     """Зарегистрировать просмотр объявления"""
-    crud.register_listing_view(db, listing_id, user_id)
-    return {"status": "ok"}
+    # Получаем IP адрес
+    ip_address = request.client.host if request.client else "unknown"
 
+    # Определяем устройство и браузер из User-Agent
+    user_agent = request.headers.get("user-agent", "")
+    device = "Desktop"
+    browser = "Unknown"
 
-@router.post("/{listing_id}/favorite")
-async def add_to_favorites(
-        listing_id: int,
-        user_id: int,
-        db: Session = Depends(get_db)
-):
-    """Добавить в избранное"""
-    favorite = crud.add_favorite(db, user_id, listing_id)
-    return {"status": "added", "favorite_id": favorite.favorite_id}
+    if "Mobile" in user_agent or "Android" in user_agent:
+        device = "Mobile"
+    elif "Tablet" in user_agent or "iPad" in user_agent:
+        device = "Tablet"
 
+    if "Chrome" in user_agent:
+        browser = "Chrome"
+    elif "Firefox" in user_agent:
+        browser = "Firefox"
+    elif "Safari" in user_agent:
+        browser = "Safari"
+    elif "Edge" in user_agent:
+        browser = "Edge"
 
-@router.delete("/{listing_id}/favorite")
-async def remove_from_favorites(
-        listing_id: int,
-        user_id: int,
-        db: Session = Depends(get_db)
-):
-    """Удалить из избранного"""
-    crud.remove_favorite(db, user_id, listing_id)
-    return {"status": "removed"}
-
-
-@router.get("/similar/{listing_id}", response_model=List[schemas.Listing])
-async def get_similar_listings(
-        listing_id: int,
-        limit: int = 5,
-        db: Session = Depends(get_db)
-):
-    """Похожие объявления (тот же район, тип, цена)"""
-    return crud.get_similar_listings(db, listing_id, limit)
-
-
-@router.get("/", response_model=List[schemas.Listing])
-async def get_all_listings(
-        skip: int = Query(0, ge=0),
-        limit: int = Query(50, ge=1, le=100),
-        db: Session = Depends(get_db)
-):
-    """Получить все активные объявления"""
-    listings = crud.get_active_listings(db, skip=skip, limit=limit)
-    return listings
-
-
-@router.get("/search", response_model=List[schemas.Listing])
-async def search_listings(
-        skip: int = Query(0, ge=0),
-        limit: int = Query(50, ge=1, le=100),
-        city: Optional[str] = None,
-        deal_type: Optional[str] = None,
-        rooms: Optional[int] = None,
-        min_price: Optional[float] = None,
-        max_price: Optional[float] = None,
-        db: Session = Depends(get_db)
-):
-    """Поиск по активным объявлениям"""
-    query = db.query(models.Listing).filter(
-        models.Listing.listing_status_id == 1,
-        models.Listing.moderated == True
+    # Регистрируем просмотр
+    listing_crud.register_listing_view(
+        db=db,
+        listing_id=listing_id,
+        user_id=current_user.user_id if current_user else None,
+        ip_address=ip_address,
+        device=device,
+        browser=browser
     )
 
-    if city:
-        query = query.filter(models.Listing.address.ilike(f'%{city}%'))
-    if deal_type:
-        query = query.join(models.DealType).filter(models.DealType.name.ilike(f'%{deal_type}%'))
-    if rooms:
-        query = query.filter(models.Listing.title.ilike(f'%{rooms} комн%'))
-    if min_price:
-        query = query.filter(models.Listing.price >= min_price)
-    if max_price:
-        query = query.filter(models.Listing.price <= max_price)
-
-    return query.order_by(models.Listing.publication_date.desc()).offset(skip).limit(limit).all()
-
-
-@router.get("/{listing_id}", response_model=schemas.ListingDetail)
-async def get_listing_detail(listing_id: int, db: Session = Depends(get_db)):
-    """Детальная информация об объявлении с фото"""
-    listing = crud.get_listing_with_photos(db, listing_id)
-    if not listing:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-
-    # Увеличиваем счетчик просмотров
-    crud.increment_listing_views(db, listing_id)
-
-    return listing
-
-
-@router.get("/{listing_id}/contacts")
-async def get_contacts(listing_id: int, db: Session = Depends(get_db)):
-    """Контакты продавца"""
-    contacts = crud.get_listing_contacts(db, listing_id)
-    if not contacts:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-
-    # Логируем запрос контактов
-    crud.log_contact_request(db, listing_id)
-
-    return contacts
-
-
+    return {"status": "ok", "message": "View registered"}

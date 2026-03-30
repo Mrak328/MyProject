@@ -61,3 +61,12 @@ export const getListingPhotos = async (id) => {
     return [];
   }
 };
+
+export const registerView = async (listingId, userId = null) => {
+    try {
+        const response = await API.post(`/listings/${listingId}/view`, { user_id: userId });
+        return response.data;
+    } catch (error) {
+        console.error('Ошибка регистрации просмотра:', error);
+    }
+};
