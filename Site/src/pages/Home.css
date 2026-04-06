@@ -1,92 +1,59 @@
-.home-page {
-  padding: 20px 0;
-}
-
-.home-page h1 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
 .results-info {
-  margin: 20px 0;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.results-info p {
-  color: #666;
-  font-size: 14px;
-  margin: 0;
-}
-
-.active-note {
-  color: #27ae60 !important;
-  font-weight: 500;
-}
-
-.active-note:before {
-  content: "✓";
-  margin-right: 5px;
-}
-
-.no-results {
-  text-align: center;
-  padding: 60px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.no-results p:first-child {
-  font-size: 20px;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.no-results p:last-child {
-  color: #999;
+    margin: 20px 0;
+    padding: 0;
+    font-size: 14px;
+    color: #666;
 }
 
 .loader {
-  text-align: center;
-  padding: 60px;
-  font-size: 18px;
-  color: #666;
+    text-align: center;
+    padding: 40px;
+    font-size: 16px;
+    color: #666;
 }
 
 .error {
-  background: #ffebee;
-  color: #c62828;
-  padding: 15px;
-  border-radius: 4px;
-  margin: 20px 0;
-  text-align: center;
+    text-align: center;
+    padding: 20px;
+    color: #e74c3c;
+    background: #fee2e2;
+    border-radius: 12px;
+    margin-bottom: 20px;
 }
 
-.error-container {
-  text-align: center;
-  padding: 50px;
-  background: #fff3cd;
-  border: 1px solid #ffeeba;
-  border-radius: 8px;
-  margin: 50px auto;
-  max-width: 600px;
+.no-results {
+    text-align: center;
+    padding: 60px;
+    background: white;
+    border-radius: 16px;
 }
 
-.error-container h2 {
-  color: #856404;
-  margin-bottom: 20px;
+.load-more {
+    text-align: center;
+    margin: 30px 0;
 }
 
-.error-container code {
-  display: block;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  margin: 20px 0;
-  font-size: 16px;
+.load-more button {
+    padding: 12px 32px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+}
+
+.load-more button:disabled {
+    background: #95a5a6;
+}
+
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .listings-grid {
+        grid-template-columns: 1fr;
+    }
 }

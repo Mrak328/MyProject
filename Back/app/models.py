@@ -110,6 +110,9 @@ class Listing(Base):
     title = Column(String(200), nullable=False)
     description = Column(Text)
     total_area = Column(DECIMAL(10, 2))
+    rooms = Column(Integer, nullable=True)
+    floor = Column(Integer)
+    max_floor = Column(Integer)
     renovation_condition_id = Column(Integer, ForeignKey("renovation_condition.renovation_condition_id"))
     price = Column(DECIMAL(12, 2), nullable=False)
     currency = Column(String(3), default='RUB')
@@ -122,6 +125,7 @@ class Listing(Base):
     moderator_id = Column(Integer, ForeignKey("users.user_id"))
     moderation_date = Column(DateTime)
 
+    # Relationships
     user = relationship("Users", back_populates="listings", foreign_keys=[user_id])
     moderator = relationship("Users", back_populates="moderated_listings", foreign_keys=[moderator_id])
     status = relationship("ListingStatus", back_populates="listings")
@@ -138,7 +142,6 @@ class Listing(Base):
     violations = relationship("BlocksAndViolations",
                               foreign_keys="BlocksAndViolations.listing_id",
                               back_populates="listing")
-
 
 class Photo(Base):
     __tablename__ = "photo"

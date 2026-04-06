@@ -1,123 +1,85 @@
 import React, { useState, useEffect } from 'react';
 import ListingCard from '../components/ListingCard';
 import SearchForm from '../components/SearchForm';
-import { getAllListings, searchListings } from '../services/listings';
+import { searchListings } from '../services/listings';
 import './Home.css';
 
 function Home() {
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({
-    city: '',
-    dealType: 'sale',
-    minPrice: '',
-    maxPrice: '',
-    rooms: ''
-  });
+    const [listings, setListings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
+    const [filters, setFilters] = useState({
+        query: '', city: '', minPrice: '', maxPrice: '', minArea: '', maxArea: '',
+        rooms: null, floor: '', maxFloor: '', renovationId: '', propertyTypeId: '', dealTypeId: '', sortBy: 'date_desc'
+    });
 
-  // Загрузка при первом открытии
-  useEffect(() => {
-    loadAllListings();
-  }, []);
+    useEffect(() => {
+        loadListings();
+    }, [filters, page]);
 
-  // Загрузка при изменении фильтров
-  useEffect(() => {
-    // Не загружаем при первом рендере (уже загрузили)
-    if (loading) return;
+    const loadListings = async () => {
+        setLoading(true);
+        setError(null);
 
-    // Добавляем небольшую задержку чтобы не спамить запросами
-    const timer = setTimeout(() => {
-      loadFilteredListings();
-    }, 500);
+        try {
+            const data = await searchListings(filters, page, 20);
+            setListings(data.items || []);
+            setTotal(data.total || 0);
+        } catch (err) {
+            setError('Не удалось загрузить объявления');
+            setListings([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    return () => clearTimeout(timer);
-  }, [filters]);
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
+        setPage(1);
+    };
 
-  const loadAllListings = async () => {
-    setLoading(true);
-    try {
-      const data = await getAllListings();
-      setListings(data);
-      setError(null);
-    } catch (err) {
-      setError('Не удалось загрузить объявления');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const totalPages = Math.ceil(total / 20);
 
-  const loadFilteredListings = async () => {
-    // Проверяем, есть ли активные фильтры
-    const hasFilters = filters.city || filters.minPrice || filters.maxPrice || filters.rooms;
-
-    if (!hasFilters) {
-      loadAllListings();
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const data = await searchListings(filters);
-      setListings(data);
-      setError(null);
-    } catch (err) {
-      setError('Ошибка при поиске');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-  };
-
-  // Проверка подключения к бэкенду
-  if (error?.includes('Network Error')) {
     return (
-      <div className="error-container">
-        <h2>❌ Бэкенд не запущен!</h2>
-        <p>Запустите сервер командой:</p>
-        <code>cd backend && python run.py</code>
-      </div>
+        <div>
+            <SearchForm filters={filters} onFilterChange={handleFilterChange} />
+
+            <div className="results-info">
+                <p>Найдено {total} объявлений</p>
+            </div>
+
+            {error && <div className="error">{error}</div>}
+
+            {loading && page === 1 ? (
+                <div className="loader">Загрузка объявлений...</div>
+            ) : (
+                <>
+                    <div className="listings-grid">
+                        {listings.map(listing => (
+                            <ListingCard key={listing.listing_id} listing={listing} />
+                        ))}
+                    </div>
+
+                    {listings.length === 0 && !loading && (
+                        <div className="no-results">
+                            <p>😕 Объявлений не найдено</p>
+                            <p>Попробуйте изменить параметры поиска</p>
+                        </div>
+                    )}
+
+                    {page < totalPages && (
+                        <div className="load-more">
+                            <button onClick={() => setPage(p => p + 1)} disabled={loading}>
+                                {loading ? 'Загрузка...' : 'Показать еще'}
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
     );
-  }
-
-  return (
-    <div className="home-page">
-      <h1>Поиск недвижимости</h1>
-
-      <SearchForm
-        filters={filters}
-        onFilterChange={handleFilterChange}
-      />
-
-      {error && <div className="error">{error}</div>}
-
-      {loading ? (
-        <div className="loader">Загрузка объявлений...</div>
-      ) : (
-        <>
-          <div className="results-info">
-            <p>Найдено {listings.length} объявлений</p>
-          </div>
-
-          {listings.length === 0 ? (
-            <div className="no-results">
-              <p>😕 Объявлений не найдено</p>
-              <p>Попробуйте изменить параметры поиска</p>
-            </div>
-          ) : (
-            <div className="listings-grid">
-              {listings.map(listing => (
-                <ListingCard key={listing.listing_id} listing={listing} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
 }
 
 export default Home;
