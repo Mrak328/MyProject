@@ -95,7 +95,7 @@ async def search_listings(
     if max_area:
         query_builder = query_builder.filter(Listing.total_area <= max_area)
     if rooms:
-        if rooms == 4:  # 4+ комнат
+        if rooms == 4:
             query_builder = query_builder.filter(Listing.rooms >= 4)
         else:
             query_builder = query_builder.filter(Listing.rooms == rooms)

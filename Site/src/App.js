@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Favorites from './pages/Favorites';
 import Home from './pages/Home';
 import ListingDetail from './pages/ListingDetail';
 import Login from './pages/Login';
@@ -22,6 +23,7 @@ function App() {
                             <Route path="/" element={<Home />} />
                             <Route path="/listing/:id" element={<ListingDetail />} />
                             <Route path="/login" element={<Login />} />
+                            <Route path="/favorites" element={<Favorites />} />
 
                             {/* Админские маршруты (только для админа) */}
                             <Route path="/admin" element={

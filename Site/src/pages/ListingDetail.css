@@ -431,3 +431,129 @@
     height: 60px;
   }
 }
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.favorite-btn {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.favorite-btn:hover {
+    transform: translateY(-2px);
+}
+
+.favorite-btn.active {
+    background: #ffd700;
+    color: #333;
+}
+
+.favorite-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.report-btn {
+    width: 100%;
+    padding: 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #e74c3c;
+    transition: all 0.2s;
+}
+
+.report-btn:hover {
+    background: #fee2e2;
+    border-color: #e74c3c;
+}
+
+/* Модальное окно */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #333;
+}
+
+.modal-content select,
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.modal-content select:focus,
+.modal-content textarea:focus {
+    outline: none;
+    border-color: #2c3e50;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-buttons button:first-child:hover {
+    background: #e0e0e0;
+}
+
+.modal-buttons button:last-child {
+    background: #e74c3c;
+    color: white;
+}
+
+.modal-buttons button:last-child:hover {
+    background: #c0392b;
+}

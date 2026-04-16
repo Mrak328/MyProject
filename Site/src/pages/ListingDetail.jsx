@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getListingDetail, getListingContacts, registerView } from '../services/listings';
 import { useAuth } from '../context/AuthContext';
+import FavoriteButton from '../components/FavoriteButton';
+import ReportModal from '../components/ReportModal';
 import './ListingDetail.css';
 
 function ListingDetail() {
@@ -14,10 +16,10 @@ function ListingDetail() {
     const [error, setError] = useState(null);
     const [showContacts, setShowContacts] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState(0);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     useEffect(() => {
         loadListing();
-        // Регистрируем просмотр при открытии страницы
         registerView(id, user?.user_id);
     }, [id, user]);
 
@@ -85,6 +87,7 @@ function ListingDetail() {
 
     return (
         <div className="listing-detail">
+            {/* Хлебные крошки */}
             <div className="breadcrumbs">
                 <Link to="/">Главная</Link> / <span>Объявление {id}</span>
             </div>
@@ -92,11 +95,12 @@ function ListingDetail() {
             <h1 className="detail-title">{listing.title}</h1>
 
             <div className="detail-content">
+                {/* Левая колонка - фото */}
                 <div className="detail-left">
                     <div className="main-photo-container">
                         {photos.length > 0 ? (
                             <img
-                                //src={photos[selectedPhoto]?.file_url || photos[selectedPhoto]}
+                                src={photos[selectedPhoto]?.file_url || photos[selectedPhoto]}
                                 alt={listing.title}
                                 className="main-photo"
                                 onError={(e) => {
@@ -134,7 +138,7 @@ function ListingDetail() {
                                     onClick={() => setSelectedPhoto(index)}
                                 >
                                     <img
-                                        //src={photo.file_url || photo}
+                                        src={photo.file_url || photo}
                                         alt={`Фото ${index + 1}`}
                                         onError={(e) => {
                                             e.target.src = 'https://via.placeholder.com/100x100?text=Фото';
@@ -153,6 +157,7 @@ function ListingDetail() {
                     )}
                 </div>
 
+                {/* Правая колонка - информация и контакты */}
                 <div className="detail-right">
                     <div className="price-section">
                         <div className="price">{formatPrice(listing.price)}</div>
@@ -170,6 +175,12 @@ function ListingDetail() {
                                     <span className="feature-value">{listing.total_area} м²</span>
                                 </div>
                             )}
+                            {listing.rooms && (
+                                <div className="feature-item">
+                                    <span className="feature-label">Комнат</span>
+                                    <span className="feature-value">{listing.rooms}</span>
+                                </div>
+                            )}
                             <div className="feature-item">
                                 <span className="feature-label">Адрес</span>
                                 <span className="feature-value">{listing.address}</span>
@@ -185,6 +196,18 @@ function ListingDetail() {
                         </div>
                     </div>
 
+                    {/* Кнопки: Избранное и Пожаловаться */}
+                    <div className="action-buttons">
+                        <FavoriteButton listingId={id} />
+                        <button
+                            onClick={() => setShowReportModal(true)}
+                            className="report-btn"
+                        >
+                            🚨 Пожаловаться
+                        </button>
+                    </div>
+
+                    {/* Контакты продавца */}
                     <div className="contacts-section">
                         <h3>Контакты</h3>
 
@@ -218,14 +241,20 @@ function ListingDetail() {
                             </button>
                         )}
                     </div>
-
-                    {user && (
-                        <button className="favorite-btn">
-                            ★ В избранное
-                        </button>
-                    )}
                 </div>
             </div>
+
+            {/* Модальное окно жалобы */}
+            {showReportModal && (
+                <ReportModal
+                    listingId={id}
+                    onClose={() => setShowReportModal(false)}
+                    onSuccess={() => {
+                        setShowReportModal(false);
+                        alert('Жалоба отправлена');
+                    }}
+                />
+            )}
         </div>
     );
 }

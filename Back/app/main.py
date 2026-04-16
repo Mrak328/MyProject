@@ -38,6 +38,7 @@ from app.routers.auth import router as auth_router
 from app.routers.public import router as public_router
 from app.routers.subscriptions import router as subscriptions_router
 from app.routers import moderation
+from app.routers import favorites, complaints
 
 # Подключаем роутеры
 app.include_router(users_router, prefix="/api")
@@ -50,6 +51,8 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(public_router, prefix="/api")
 app.include_router(subscriptions_router, prefix="/api")
 app.include_router(moderation.router, prefix="/api")
+app.include_router(favorites.router, prefix="/api")
+app.include_router(complaints.router, prefix="/api")
 
 @app.get("/")
 async def root():
