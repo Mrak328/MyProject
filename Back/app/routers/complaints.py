@@ -23,9 +23,14 @@ def create_complaint(
         db: Session = Depends(get_db),
         current_user: Users = Depends(get_current_user)
 ):
+    """Создание новой жалобы на объявление"""
     listing = listing_crud.get(db, listing_id)
     if not listing:
         raise HTTPException(404, "Объявление не найдено")
+
+    # Нельзя жаловаться на своё объявление
+    if listing.user_id == current_user.user_id:
+        raise HTTPException(400, "Нельзя жаловаться на своё объявление")
 
     complaint = complaint_crud.create_complaint(
         db,

@@ -14,18 +14,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=Token)
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Вход по email ИЛИ телефону + пароль"""
+    """Вход по email или телефону + пароль"""
 
-    # 1. Найти пользователя по email ИЛИ телефону
     user = user_crud.get_by_email_or_phone(db, request.email_or_phone)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid email/phone or password")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 2. Проверить пароль
     if not auth_service.verify_password(request.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid email/phone or password")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 3. Создать токен
     access_token = auth_service.create_access_token(
         data={"sub": str(user.user_id)}
     )
@@ -40,22 +37,14 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Регистрация нового пользователя"""
 
-    # Проверка email
-    if user_data.email:
-        existing = user_crud.get_by_email(db, user_data.email)
-        if existing:
-            raise HTTPException(status_code=400, detail="Email already registered")
+    if user_crud.get_by_phone(db, user_data.phone_number):
+        raise HTTPException(status_code=400, detail="Phone already registered")
 
-    # Проверка телефона
-    if user_data.phone_number:
-        existing_phone = user_crud.get_by_phone(db, user_data.phone_number)
-        if existing_phone:
-            raise HTTPException(status_code=400, detail="Phone already registered")
+    if user_data.email and user_crud.get_by_email(db, user_data.email):
+        raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Хешируем пароль
     hashed_password = auth_service.hash_password(user_data.password)
 
-    # Создаем пользователя
     user_create = UserCreate(
         first_name=user_data.first_name,
         phone_number=user_data.phone_number,
@@ -64,7 +53,6 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     )
     new_user = user_crud.create(db, user_create)
 
-    # Создаем токен
     access_token = auth_service.create_access_token(
         data={"sub": str(new_user.user_id)}
     )

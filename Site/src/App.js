@@ -10,6 +10,9 @@ import Login from './pages/Login';
 import AdminPanel from './pages/AdminPanel';
 import AdminAnalytics from './pages/AdminAnalytics';
 import ProtectedRoute from './components/ProtectedRoute';
+import Register from './pages/Register';
+import CreateListing from './pages/CreateListing';
+import Moderation from './pages/Moderation';
 
 function App() {
     return (
@@ -24,6 +27,8 @@ function App() {
                             <Route path="/listing/:id" element={<ListingDetail />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/favorites" element={<Favorites />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/create-listing" element={<CreateListing />} />
 
                             {/* Админские маршруты (только для админа) */}
                             <Route path="/admin" element={
@@ -34,6 +39,13 @@ function App() {
                             <Route path="/analytics" element={
                                 <ProtectedRoute requireAdmin={true}>
                                     <AdminAnalytics />
+                                </ProtectedRoute>
+                            } />
+
+                            {/* Маршруты модерации (для админа и модератора) */}
+                            <Route path="/moderation" element={
+                                <ProtectedRoute requireModerator={true}>
+                                    <Moderation />
                                 </ProtectedRoute>
                             } />
                         </Routes>

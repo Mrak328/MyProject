@@ -9,6 +9,7 @@ from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
 from app.schemas.common import MessageResponse
 from app.core.dependencies import get_current_user_optional
 from app.models import Users, Listing
+from app.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -293,3 +294,17 @@ async def register_view(
     )
 
     return {"status": "ok", "message": "View registered"}
+
+
+@router.post("/", response_model=ListingResponse)
+async def create_listing(
+    listing: ListingCreate,
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user)
+):
+    """Создание нового объявления (требует модерации)"""
+    listing.user_id = current_user.user_id
+    listing.moderated = False  # ← НЕ проверено, ждёт модерации
+    listing.listing_status_id = 1  # активное, но не проверенное
+    new_listing = listing_crud.create(db, listing)
+    return new_listing

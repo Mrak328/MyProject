@@ -23,11 +23,11 @@ function ReportModal({ listingId, onClose, onSuccess }) {
         setLoading(true);
         try {
             await createComplaint(listingId, complaintType, description);
-            alert('Жалоба отправлена');
+            alert('Жалоба отправлена на модерацию');
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
-            alert('Ошибка при отправке жалобы');
+            alert(error.response?.data?.detail || 'Ошибка при отправке жалобы');
         }
         setLoading(false);
     };

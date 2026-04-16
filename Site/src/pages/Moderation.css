@@ -1,0 +1,309 @@
+.moderation-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.moderation-page h1 {
+    font-size: 28px;
+    margin-bottom: 24px;
+    color: #333;
+}
+
+/* Вкладки */
+.moderation-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 12px;
+}
+
+.tab-btn {
+    padding: 10px 24px;
+    background: none;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.2s;
+    color: #666;
+}
+
+.tab-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.tab-btn.active {
+    background: #2c3e50;
+    color: white;
+}
+
+/* Сетка объявлений */
+.listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+/* Карточка объявления */
+.listing-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.listing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-image {
+    height: 180px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.no-image {
+    font-size: 48px;
+    color: #ccc;
+}
+
+.card-content {
+    padding: 16px;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.card-price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.card-address {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.card-details {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.card-description {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* Кнопки действий */
+.card-actions, .complaint-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+}
+
+.btn-approve {
+    flex: 1;
+    padding: 10px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-approve:hover {
+    background: #219a52;
+    transform: translateY(-2px);
+}
+
+.btn-reject {
+    flex: 1;
+    padding: 10px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-reject:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+/* Карточка жалобы */
+.complaint-card {
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.complaint-header {
+    padding: 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.complaint-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.new {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.complaint-type {
+    background: #e9ecef;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #495057;
+}
+
+.complaint-date {
+    font-size: 12px;
+    color: #888;
+}
+
+.complaint-body {
+    padding: 16px;
+}
+
+.complaint-listing, .complaint-description {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #555;
+}
+
+.complaint-listing strong, .complaint-description strong {
+    color: #333;
+}
+
+.action-select {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.action-select:focus {
+    outline: none;
+    border-color: #2c3e50;
+}
+
+/* Пустое состояние */
+.empty-state {
+    text-align: center;
+    padding: 60px;
+    background: white;
+    border-radius: 16px;
+    color: #888;
+    font-size: 16px;
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+/* Загрузчик */
+.loader {
+    text-align: center;
+    padding: 60px;
+    font-size: 16px;
+    color: #666;
+}
+
+.access-denied {
+    text-align: center;
+    padding: 60px;
+    font-size: 18px;
+    color: #e74c3c;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .moderation-page {
+        padding: 15px;
+    }
+
+    .moderation-page h1 {
+        font-size: 24px;
+    }
+
+    .listings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .complaint-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .complaint-actions {
+        flex-direction: column;
+    }
+
+    .card-actions {
+        flex-direction: column;
+    }
+}

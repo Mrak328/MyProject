@@ -15,21 +15,31 @@ function Header() {
     return (
         <header className="header">
             <div className="header-container">
-                <Link to="/" className="logo">🏠 Недвижимость</Link>
+                <Link to="/" className="logo">
+                    🏠 Недвижимость
+                </Link>
 
                 <nav className="nav-menu">
                     <Link to="/">Главная</Link>
 
                     {isAuthenticated && (
-                        <Link to="/favorites">Избранное</Link>
+                        <Link to="/favorites">❤️ Избранное</Link>
+                    )}
+
+                    {isAuthenticated && (
+                        <Link to="/create-listing">➕ Добавить объявление</Link>
                     )}
 
                     {(isAdmin || isModerator) && (
-                        <Link to="/moderation">Модерация</Link>
+                        <Link to="/moderation">🛡️ Модерация</Link>
                     )}
 
                     {isAdmin && (
-                        <Link to="/analytics">Аналитика</Link>
+                        <Link to="/analytics">📊 Аналитика</Link>
+                    )}
+
+                    {isAuthenticated && (
+                        <Link to={`/user/${user?.user_id}`}>👤 Профиль</Link>
                     )}
                 </nav>
 
@@ -37,15 +47,18 @@ function Header() {
                     {isAuthenticated ? (
                         <>
                             <span className="user-name">
-                                👤 {user?.first_name}
+                                👋 {user?.first_name}
                                 {isAdmin && <span className="role-badge admin">Admin</span>}
-                                {isModerator && !isAdmin && <span className="role-badge moderator">Moderator</span>}
-                                {!isAdmin && !isModerator && <span className="role-badge user">User</span>}
+                                {isModerator && !isAdmin && <span className="role-badge moderator">Mod</span>}
                             </span>
-                            <button onClick={handleLogout}>Выйти</button>
+                            <button onClick={handleLogout} className="logout-btn">
+                                🚪 Выйти
+                            </button>
                         </>
                     ) : (
-                        <button onClick={() => navigate('/login')}>Войти</button>
+                        <button onClick={() => navigate('/login')} className="login-btn">
+                            🔐 Войти
+                        </button>
                     )}
                 </div>
             </div>
