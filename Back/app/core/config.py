@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -17,12 +17,20 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 дней
 
     # Загрузка файлов
     UPLOAD_DIR: str = "static/photos"
-    MAX_FILE_SIZE: int = 5 * 1024 * 1024
-    ALLOWED_EXTENSIONS: list = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+    MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10 МБ
+    ALLOWED_EXTENSIONS: List[str] = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+
+    # CORS
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+
+    # Приложение
+    APP_NAME: str = "Aviko API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = False
 
     class Config:
         env_file = ".env"

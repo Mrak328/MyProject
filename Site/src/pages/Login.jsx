@@ -17,12 +17,10 @@ function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
         const success = await login(emailOrPhone, password);
         if (success) {
             navigate('/');
         }
-
         setLoading(false);
     };
 
@@ -30,35 +28,32 @@ function Login() {
         <div className="login-page">
             <div className="login-container">
                 <div className="login-header">
-                    <h1>Добро пожаловать</h1>
-                    <p>Войдите в свой аккаунт</p>
+                    <h1>Вход</h1>
+                    <p>Войдите в аккаунт</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>Email или Телефон</label>
-                        <div className="input-icon">
-                            <input
-                                type="text"
-                                value={emailOrPhone}
-                                onChange={(e) => setEmailOrPhone(e.target.value)}
-                                placeholder="admin@example.com или +79999999999"
-                                required
-                            />
-                        </div>
+                        <input
+                            type="text"
+                            value={emailOrPhone}
+                            onChange={(e) => setEmailOrPhone(e.target.value)}
+                            placeholder
+                            required
+                            autoFocus
+                        />
                     </div>
 
                     <div className="form-group">
                         <label>Пароль</label>
-                        <div className="input-icon">
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Введите пароль"
-                                required
-                            />
-                        </div>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Введите пароль"
+                            required
+                        />
                     </div>
 
                     {error && <div className="error-message">{error}</div>}
@@ -72,12 +67,11 @@ function Login() {
                     <p>
                         Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
                     </p>
-                    <p className="demo-info">
+                    <div className="demo-info">
                         <strong>Тестовые данные:</strong><br />
-                        Админ: admin@example.com / admin123<br />
-                        Модератор: moderator@example.com / mod123<br />
-                        Пользователь: user@example.com / user123
-                    </p>
+                        Админ: +79999999999/admin@aviko.ru / admin123<br />
+                        Пользователь: +79000000003 / password123
+                    </div>
                 </div>
             </div>
         </div>

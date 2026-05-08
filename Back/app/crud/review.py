@@ -1,28 +1,70 @@
 from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy import desc
+from typing import List, Optional
 from app.crud.base import CRUDBase
 from app.models import Review
-from app.schemas.review import ReviewCreate
 
 
-class CRUDReview(CRUDBase[Review]):  # ← только 1 параметр
+class CRUDReview(CRUDBase[Review]):
+
+    def get_by_author(self, db: Session, author_id: int) -> List[Review]:
+        """Отзывы, которые оставил пользователь (автор)"""
+        return (
+            db.query(Review)
+            .filter(Review.author_id == author_id)
+            .order_by(desc(Review.created_date))
+            .all()
+        )
+
     def get_by_user(self, db: Session, user_id: int) -> List[Review]:
-        return db.query(Review).filter(Review.user_id == user_id).all()
+        """Отзывы о пользователе (получатель)"""
+        return (
+            db.query(Review)
+            .filter(Review.user_id == user_id)
+            .order_by(desc(Review.created_date))
+            .all()
+        )
 
     def get_by_listing(self, db: Session, listing_id: int) -> List[Review]:
-        return db.query(Review).filter(Review.listing_id == listing_id).all()
+        """Отзывы об объявлении"""
+        return (
+            db.query(Review)
+            .filter(Review.listing_id == listing_id)
+            .order_by(desc(Review.created_date))
+            .all()
+        )
 
-    def update_user_rating(self, db: Session, user_id: int) -> None:
-        from app.crud.user import user_crud
+    def get_by_author_and_listing(
+            self,
+            db: Session,
+            author_id: int,
+            listing_id: int
+    ) -> Optional[Review]:
+        """Конкретный отзыв автора на объявление"""
+        return (
+            db.query(Review)
+            .filter(
+                Review.author_id == author_id,
+                Review.listing_id == listing_id
+            )
+            .first()
+        )
 
-        reviews = self.get_by_user(db, user_id)
-        if reviews:
-            avg_rating = sum(r.rating for r in reviews) / len(reviews)
-            user = user_crud.get(db, user_id)
-            if user:
-                user.rating = avg_rating
-                user.reviews_count = len(reviews)
-                db.commit()
+    def count_by_user(self, db: Session, user_id: int) -> int:
+        """Количество отзывов о пользователе"""
+        return (
+            db.query(Review)
+            .filter(Review.user_id == user_id)
+            .count()
+        )
+
+    def count_by_listing(self, db: Session, listing_id: int) -> int:
+        """Количество отзывов об объявлении"""
+        return (
+            db.query(Review)
+            .filter(Review.listing_id == listing_id)
+            .count()
+        )
 
 
 review_crud = CRUDReview(Review)

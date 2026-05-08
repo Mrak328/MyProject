@@ -1,25 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import './Register.css';
+
+const INITIAL_FORM = {
+    first_name: '',
+    phone_number: '',
+    email: '',
+    password: '',
+    confirm_password: ''
+};
 
 function Register() {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        first_name: '',
-        phone_number: '',
-        email: '',
-        password: '',
-        confirm_password: ''
-    });
+    const { login } = useAuth();
+    const [formData, setFormData] = useState(INITIAL_FORM);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        setError('');
     };
 
     const handleSubmit = async (e) => {
@@ -36,38 +38,32 @@ function Register() {
             return;
         }
 
+        if (!formData.phone_number.match(/^\+?[0-9]{10,15}$/)) {
+            setError('Некорректный номер телефона');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const response = await API.post('/auth/register', {
+            // Регистрация
+            await API.post('/auth/register', {
                 first_name: formData.first_name,
                 phone_number: formData.phone_number,
-                email: formData.email || null,
+                email: formData.email || undefined,
                 password: formData.password
             });
 
-            localStorage.setItem('token', response.data.access_token);
-            navigate('/');
-        } catch (err) {
-            console.error('Ошибка регистрации:', err);
-
-            // Обрабатываем разные форматы ошибок
-            let errorText = 'Ошибка регистрации';
-
-            if (err.response?.data?.detail) {
-                // Если detail - объект (валидационная ошибка)
-                if (typeof err.response.data.detail === 'object') {
-                    errorText = JSON.stringify(err.response.data.detail);
-                } else {
-                    errorText = err.response.data.detail;
-                }
-            } else if (err.response?.data?.message) {
-                errorText = err.response.data.message;
-            } else if (err.message) {
-                errorText = err.message;
+            // Автоматический вход после регистрации
+            const success = await login(formData.phone_number, formData.password);
+            if (success) {
+                navigate('/');
+            } else {
+                navigate('/login');
             }
-
-            setError(errorText);
+        } catch (err) {
+            const detail = err.response?.data?.detail;
+            setError(typeof detail === 'string' ? detail : 'Ошибка регистрации');
         } finally {
             setLoading(false);
         }
@@ -80,26 +76,27 @@ function Register() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Имя *</label>
+                        <label>Имя</label>
                         <input
                             type="text"
                             name="first_name"
                             value={formData.first_name}
                             onChange={handleChange}
                             required
-                            placeholder="Введите ваше имя"
+                            placeholder="Ваше имя"
+                            autoFocus
                         />
                     </div>
 
                     <div className="form-group">
-                        <label>Телефон *</label>
+                        <label>Телефон</label>
                         <input
                             type="tel"
                             name="phone_number"
                             value={formData.phone_number}
                             onChange={handleChange}
                             required
-                            placeholder="+7XXXXXXXXXX"
+                            placeholder="+79000000000"
                         />
                     </div>
 
@@ -110,12 +107,12 @@ function Register() {
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            placeholder="example@mail.com"
+                            placeholder="example@mail.ru"
                         />
                     </div>
 
                     <div className="form-group">
-                        <label>Пароль *</label>
+                        <label>Пароль</label>
                         <input
                             type="password"
                             name="password"
@@ -127,7 +124,7 @@ function Register() {
                     </div>
 
                     <div className="form-group">
-                        <label>Подтверждение пароля *</label>
+                        <label>Подтверждение пароля</label>
                         <input
                             type="password"
                             name="confirm_password"

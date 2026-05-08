@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { registerView } from '../services/listings';
 import { useAuth } from '../context/AuthContext';
 import './ListingCard.css';
 
+const PLACEHOLDER = 'https://via.placeholder.com/300x200?text=Нет+фото';
+
 function ListingCard({ listing }) {
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+    const [imgError, setImgError] = useState(false);
     const { user } = useAuth();
 
     const photos = listing.photos || [];
@@ -16,60 +19,52 @@ function ListingCard({ listing }) {
         return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
     };
 
-    const nextPhoto = (e) => {
+    const changePhoto = useCallback((delta, e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (photos.length > 0) {
-            setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
-        }
-    };
+        setCurrentPhotoIndex((prev) => (prev + delta + photos.length) % photos.length);
+        setImgError(false);
+    }, [photos.length]);
 
-    const prevPhoto = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (photos.length > 0) {
-            setCurrentPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
-        }
-    };
+    const nextPhoto = (e) => changePhoto(1, e);
+    const prevPhoto = (e) => changePhoto(-1, e);
 
     const handleCardClick = () => {
-        // Регистрируем просмотр при клике на карточку
         registerView(listing.listing_id, user?.user_id);
     };
 
     const currentPhoto = photos.length > 0
         ? (photos[currentPhotoIndex]?.file_url || photos[currentPhotoIndex])
-        : 'https://via.placeholder.com/300x200?text=Нет+фото';
+        : PLACEHOLDER;
+
+    // Маппинг deal_type_id → текст
+    const dealTypeLabel = listing.deal_type_id === 1 ? 'Продажа' : listing.deal_type_id === 2 ? 'Аренда' : '';
 
     return (
         <div className="listing-card" onClick={handleCardClick}>
             <Link to={`/listing/${listing.listing_id}`}>
                 <div className="card-image-container">
                     <img
-                        //src={currentPhoto}
+                        src={imgError ? PLACEHOLDER : currentPhoto}
                         alt={listing.title}
                         className="card-image"
-                        onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/300x200?text=Нет+фото';
-                        }}
+                        loading="lazy"
+                        onError={() => setImgError(true)}
                     />
 
                     {hasMultiplePhotos && (
                         <>
-                            <button className="photo-nav prev" onClick={prevPhoto}>‹</button>
-                            <button className="photo-nav next" onClick={nextPhoto}>›</button>
+                            <button className="photo-nav prev" onClick={prevPhoto} type="button">‹</button>
+                            <button className="photo-nav next" onClick={nextPhoto} type="button">›</button>
+                            <div className="photo-counter">
+                                {currentPhotoIndex + 1} / {photos.length}
+                            </div>
                         </>
                     )}
 
-                    {hasMultiplePhotos && (
-                        <div className="photo-counter">
-                            {currentPhotoIndex + 1} / {photos.length}
-                        </div>
-                    )}
-
-                    {listing.deal_type && (
-                        <span className="deal-badge">
-                            {listing.deal_type === 'rent' ? 'Аренда' : 'Продажа'}
+                    {dealTypeLabel && (
+                        <span className={`deal-badge ${listing.deal_type_id === 1 ? 'sale' : 'rent'}`}>
+                            {dealTypeLabel}
                         </span>
                     )}
                 </div>
@@ -81,19 +76,18 @@ function ListingCard({ listing }) {
                         📍 {listing.address || 'Адрес не указан'}
                     </p>
                     <div className="card-details">
-                        {listing.total_area && (
-                            <span>📐 {listing.total_area} м²</span>
-                        )}
-                        {listing.rooms && (
-                            <span>🛏 {listing.rooms} комн</span>
+                        {listing.total_area && <span>📐 {listing.total_area} м²</span>}
+                        {listing.rooms && <span>🛏 {listing.rooms} комн</span>}
+                        {listing.floor && listing.max_floor && (
+                            <span>🏢 {listing.floor}/{listing.max_floor} эт</span>
                         )}
                     </div>
                     <div className="card-footer">
                         <span className="card-views">👁 {listing.views || 0}</span>
                         <span className="card-date">
-                            {listing.publication_date ?
-                                new Date(listing.publication_date).toLocaleDateString() :
-                                ''}
+                            {listing.publication_date
+                                ? new Date(listing.publication_date).toLocaleDateString('ru-RU')
+                                : ''}
                         </span>
                     </div>
                 </div>

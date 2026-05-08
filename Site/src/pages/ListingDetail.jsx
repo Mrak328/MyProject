@@ -1,56 +1,93 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getListingDetail, getListingContacts, registerView } from '../services/listings';
+import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import FavoriteButton from '../components/FavoriteButton';
 import ReportModal from '../components/ReportModal';
 import './ListingDetail.css';
 
+const PLACEHOLDER = 'https://via.placeholder.com/800x600?text=Нет+фото';
+
 function ListingDetail() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
 
     const [listing, setListing] = useState(null);
-    const [contacts, setContacts] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showContacts, setShowContacts] = useState(false);
     const [selectedPhoto, setSelectedPhoto] = useState(0);
     const [showReportModal, setShowReportModal] = useState(false);
 
+    // Отзывы и комментарии
+    const [reviews, setReviews] = useState([]);
+    const [comments, setComments] = useState({});
+    const [newReview, setNewReview] = useState('');
+    const [commentInputs, setCommentInputs] = useState({});
+
     useEffect(() => {
         loadListing();
-        registerView(id, user?.user_id);
-    }, [id, user]);
+        loadReviews();
+    }, [id]);
 
-    const loadListing = async () => {
+    const loadListing = useCallback(async () => {
         setLoading(true);
+        setError(null);
         try {
-            const data = await getListingDetail(id);
-            if (data) {
-                setListing(data);
-            } else {
-                setError('Объявление не найдено');
-            }
-        } catch (err) {
-            setError('Ошибка загрузки');
+            const res = await API.get(`/listings/${id}`);
+            setListing(res.data);
+        } catch {
+            setError('Ошибка загрузки объявления');
         } finally {
             setLoading(false);
         }
+    }, [id]);
+
+    const loadReviews = async () => {
+        try {
+            const res = await API.get(`/reviews/listing/${id}`);
+            setReviews(res.data || []);
+            // Загрузить комментарии для всех отзывов
+            res.data?.forEach(r => loadComments(r.review_id));
+        } catch {}
     };
 
-    const handleShowContacts = async () => {
-        if (!user) {
-            alert('Войдите чтобы увидеть контакты');
-            return;
-        }
+    const loadComments = async (reviewId) => {
+        try {
+            const res = await API.get(`/comments/review/${reviewId}`);
+            setComments(prev => ({ ...prev, [reviewId]: res.data || [] }));
+        } catch {}
+    };
 
-        const data = await getListingContacts(id);
-        if (data) {
-            setContacts(data);
-            setShowContacts(true);
+    const submitReview = async () => {
+        if (!newReview.trim()) return;
+        try {
+            await API.post('/reviews/', {
+                user_id: listing.user_id,
+                listing_id: listing.listing_id,
+                content: newReview
+            });
+            setNewReview('');
+            loadReviews();
+        } catch (err) {
+            alert(err.response?.data?.detail || 'Ошибка');
         }
     };
+
+    const submitComment = async (reviewId, content) => {
+        if (!content.trim()) return;
+        try {
+            await API.post('/comments/', { review_id: reviewId, content });
+            setCommentInputs(prev => ({ ...prev, [reviewId]: '' }));
+            loadComments(reviewId);
+        } catch {}
+    };
+
+    const changePhoto = useCallback((delta) => {
+        setSelectedPhoto((prev) => {
+            if (!listing?.photos?.length) return 0;
+            return (prev + delta + listing.photos.length) % listing.photos.length;
+        });
+    }, [listing]);
 
     const formatPrice = (price) => {
         if (!price) return 'Цена не указана';
@@ -60,22 +97,8 @@ function ListingDetail() {
     const formatDate = (date) => {
         if (!date) return '';
         return new Date(date).toLocaleDateString('ru-RU', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
+            day: 'numeric', month: 'long', year: 'numeric'
         });
-    };
-
-    const nextPhoto = () => {
-        if (listing?.photos?.length) {
-            setSelectedPhoto((prev) => (prev + 1) % listing.photos.length);
-        }
-    };
-
-    const prevPhoto = () => {
-        if (listing?.photos?.length) {
-            setSelectedPhoto((prev) => (prev - 1 + listing.photos.length) % listing.photos.length);
-        }
     };
 
     if (loading) return <div className="loader">Загрузка...</div>;
@@ -83,49 +106,37 @@ function ListingDetail() {
     if (!listing) return <div className="error">Объявление не найдено</div>;
 
     const photos = listing.photos || [];
-    const hasMultiplePhotos = photos.length > 1;
+    const currentPhoto = photos.length > 0
+        ? (photos[selectedPhoto]?.file_url || photos[selectedPhoto])
+        : PLACEHOLDER;
+    const dealTypeLabel = listing.deal_type_id === 1 ? 'Продажа' : listing.deal_type_id === 2 ? 'Аренда' : '';
 
     return (
         <div className="listing-detail">
             {/* Хлебные крошки */}
             <div className="breadcrumbs">
-                <Link to="/">Главная</Link> / <span>Объявление {id}</span>
+                <Link to="/">Главная</Link> / <Link to="/listings">Объявления</Link> / <span>{listing.title}</span>
             </div>
 
             <h1 className="detail-title">{listing.title}</h1>
 
             <div className="detail-content">
-                {/* Левая колонка - фото */}
+                {/* Левая колонка — фото и описание */}
                 <div className="detail-left">
                     <div className="main-photo-container">
-                        {photos.length > 0 ? (
-                            <img
-                                src={photos[selectedPhoto]?.file_url || photos[selectedPhoto]}
-                                alt={listing.title}
-                                className="main-photo"
-                                onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/800x600?text=Нет+фото';
-                                }}
-                            />
-                        ) : (
-                            <img
-                                src="https://via.placeholder.com/800x600?text=Нет+фото"
-                                alt="Нет фото"
-                                className="main-photo"
-                            />
-                        )}
+                        <img
+                            src={currentPhoto}
+                            alt={listing.title}
+                            className="main-photo"
+                            onError={(e) => { e.target.src = PLACEHOLDER; }}
+                        />
 
-                        {hasMultiplePhotos && (
+                        {photos.length > 1 && (
                             <>
-                                <button className="main-photo-nav prev" onClick={prevPhoto}>‹</button>
-                                <button className="main-photo-nav next" onClick={nextPhoto}>›</button>
+                                <button className="main-photo-nav prev" onClick={() => changePhoto(-1)}>‹</button>
+                                <button className="main-photo-nav next" onClick={() => changePhoto(1)}>›</button>
+                                <div className="main-photo-counter">{selectedPhoto + 1} / {photos.length}</div>
                             </>
-                        )}
-
-                        {hasMultiplePhotos && (
-                            <div className="main-photo-counter">
-                                {selectedPhoto + 1} / {photos.length}
-                            </div>
                         )}
                     </div>
 
@@ -140,9 +151,7 @@ function ListingDetail() {
                                     <img
                                         src={photo.file_url || photo}
                                         alt={`Фото ${index + 1}`}
-                                        onError={(e) => {
-                                            e.target.src = 'https://via.placeholder.com/100x100?text=Фото';
-                                        }}
+                                        onError={(e) => { e.target.src = PLACEHOLDER; }}
                                     />
                                 </div>
                             ))}
@@ -157,13 +166,11 @@ function ListingDetail() {
                     )}
                 </div>
 
-                {/* Правая колонка - информация и контакты */}
+                {/* Правая колонка — информация */}
                 <div className="detail-right">
                     <div className="price-section">
                         <div className="price">{formatPrice(listing.price)}</div>
-                        {listing.deal_type === 'rent' && (
-                            <div className="price-period">в месяц</div>
-                        )}
+                        {listing.deal_type_id === 2 && <div className="price-period">в месяц</div>}
                     </div>
 
                     <div className="features-section">
@@ -181,10 +188,26 @@ function ListingDetail() {
                                     <span className="feature-value">{listing.rooms}</span>
                                 </div>
                             )}
-                            <div className="feature-item">
-                                <span className="feature-label">Адрес</span>
-                                <span className="feature-value">{listing.address}</span>
-                            </div>
+                            {listing.floor && (
+                                <div className="feature-item">
+                                    <span className="feature-label">Этаж</span>
+                                    <span className="feature-value">
+                                        {listing.floor}{listing.max_floor ? ` / ${listing.max_floor}` : ''}
+                                    </span>
+                                </div>
+                            )}
+                            {listing.address && (
+                                <div className="feature-item">
+                                    <span className="feature-label">Адрес</span>
+                                    <span className="feature-value">{listing.address}</span>
+                                </div>
+                            )}
+                            {dealTypeLabel && (
+                                <div className="feature-item">
+                                    <span className="feature-label">Тип сделки</span>
+                                    <span className="feature-value">{dealTypeLabel}</span>
+                                </div>
+                            )}
                             <div className="feature-item">
                                 <span className="feature-label">Дата публикации</span>
                                 <span className="feature-value">{formatDate(listing.publication_date)}</span>
@@ -196,63 +219,104 @@ function ListingDetail() {
                         </div>
                     </div>
 
-                    {/* Кнопки: Избранное и Пожаловаться */}
+                    {/* Избранное и жалоба */}
                     <div className="action-buttons">
-                        <FavoriteButton listingId={id} />
-                        <button
-                            onClick={() => setShowReportModal(true)}
-                            className="report-btn"
-                        >
+                        <FavoriteButton listingId={Number(id)} />
+                        <button onClick={() => setShowReportModal(true)} className="report-btn">
                             🚨 Пожаловаться
                         </button>
                     </div>
 
-                    {/* Контакты продавца */}
+                    {/* Контакты */}
                     <div className="contacts-section">
                         <h3>Контакты</h3>
-
-                        {showContacts && contacts ? (
+                        {listing.contact_phone ? (
                             <div className="contacts-info">
                                 <div className="contact-item">
                                     <span className="contact-icon">📞</span>
-                                    <a href={`tel:${contacts.phone}`} className="contact-phone">
-                                        {contacts.phone}
-                                    </a>
+                                    <a href={`tel:${listing.contact_phone}`}>{listing.contact_phone}</a>
                                 </div>
-                                {contacts.person && (
+                                {listing.contact_person && (
                                     <div className="contact-item">
                                         <span className="contact-icon">👤</span>
-                                        <span>{contacts.person}</span>
-                                    </div>
-                                )}
-                                {contacts.email && (
-                                    <div className="contact-item">
-                                        <span className="contact-icon">✉️</span>
-                                        <a href={`mailto:${contacts.email}`}>{contacts.email}</a>
+                                        <span>{listing.contact_person}</span>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <button
-                                className="show-contacts-btn"
-                                onClick={handleShowContacts}
-                            >
-                                {user ? 'Показать телефон' : 'Войдите чтобы увидеть контакты'}
-                            </button>
+                            <p className="no-contacts">Контакты не указаны</p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Модальное окно жалобы */}
+            {/* Отзывы */}
+            <div className="reviews-section">
+                <h2>Отзывы ({reviews.length})</h2>
+
+                {isAuthenticated && (
+                    <div className="review-form">
+                        <textarea
+                            placeholder="Напишите отзыв..."
+                            value={newReview}
+                            onChange={(e) => setNewReview(e.target.value)}
+                            rows="3"
+                            maxLength={1000}
+                        />
+                        <button onClick={submitReview} disabled={!newReview.trim()}>
+                            Оставить отзыв
+                        </button>
+                    </div>
+                )}
+
+                {reviews.length === 0 && !isAuthenticated && (
+                    <p className="no-data">Войдите, чтобы оставить отзыв</p>
+                )}
+
+                {reviews.map((review) => (
+                    <div key={review.review_id} className="review-card">
+                        <div className="review-header">
+                            <strong>{review.author_name || 'Пользователь'}</strong>
+                            <span className="review-date">{formatDate(review.created_date)}</span>
+                        </div>
+                        <p className="review-content">{review.content}</p>
+
+                        {/* Комментарии к отзыву */}
+                        {comments[review.review_id]?.length > 0 && (
+                            <div className="comments-list">
+                                {comments[review.review_id].map((c) => (
+                                    <div key={c.comment_id} className="comment-item">
+                                        <strong>{c.user_name || 'Пользователь'}</strong>: {c.content}
+                                        <span className="comment-date">{formatDate(c.created_date)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Форма комментария */}
+                        {isAuthenticated && (
+                            <div className="comment-form">
+                                <input
+                                    placeholder="Добавить комментарий..."
+                                    value={commentInputs[review.review_id] || ''}
+                                    onChange={(e) => setCommentInputs(prev => ({ ...prev, [review.review_id]: e.target.value }))}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            submitComment(review.review_id, e.target.value);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {/* Модалка жалобы */}
             {showReportModal && (
                 <ReportModal
-                    listingId={id}
+                    listingId={Number(id)}
                     onClose={() => setShowReportModal(false)}
-                    onSuccess={() => {
-                        setShowReportModal(false);
-                        alert('Жалоба отправлена');
-                    }}
                 />
             )}
         </div>

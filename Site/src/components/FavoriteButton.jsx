@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { addFavorite, removeFavorite, checkFavorite } from '../services/favorites';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,37 +8,42 @@ function FavoriteButton({ listingId, onToggle }) {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            checkFavorite(listingId).then(setIsFavorite);
+        if (isAuthenticated && listingId) {
+            checkFavorite(listingId).then(setIsFavorite).catch(() => {});
+        } else {
+            setIsFavorite(false);
         }
     }, [listingId, isAuthenticated]);
 
-    const handleClick = async () => {
+    const handleClick = useCallback(async () => {
         if (!isAuthenticated) {
-            alert('Войдите чтобы добавить в избранное');
+            alert('Войдите, чтобы добавить в избранное');
             return;
         }
         setLoading(true);
+        const newState = !isFavorite;
+        setIsFavorite(newState); // оптимистичное обновление
         try {
-            if (isFavorite) {
-                await removeFavorite(listingId);
-                setIsFavorite(false);
-            } else {
+            if (newState) {
                 await addFavorite(listingId);
-                setIsFavorite(true);
+            } else {
+                await removeFavorite(listingId);
             }
-            if (onToggle) onToggle(!isFavorite);
+            onToggle?.(newState);
         } catch (error) {
-            console.error('Ошибка:', error);
+            setIsFavorite(!newState); // откат при ошибке
+            console.error('Ошибка избранного:', error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    };
+    }, [isAuthenticated, isFavorite, listingId, onToggle]);
 
     return (
         <button
             onClick={handleClick}
             disabled={loading}
             className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+            aria-label={isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}
         >
             {isFavorite ? '★ В избранном' : '☆ В избранное'}
         </button>

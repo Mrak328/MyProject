@@ -1,85 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './Moderation.css';
 
+const COMPLAINT_TYPES = {
+    1: 'Спам', 2: 'Мошенничество', 3: 'Неактуальное', 4: 'Оскорбление',
+    5: 'Запрещённый контент', 6: 'Дубликат', 7: 'Неверная цена',
+    8: 'Чужие фото', 9: 'Фишинг', 10: 'Другое'
+};
+
 function Moderation() {
     const { isModerator, isAdmin } = useAuth();
-    const [activeTab, setActiveTab] = useState('complaints'); // ← по умолчанию жалобы
+    const [activeTab, setActiveTab] = useState('complaints');
     const [listings, setListings] = useState([]);
     const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (activeTab === 'listings') {
-            loadPendingListings();
-        } else {
-            loadComplaints();
-        }
-    }, [activeTab]);
-
-    const loadPendingListings = async () => {
+    const loadPendingListings = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await API.get('/moderation/pending-listings');
-            console.log('📋 Объявления на модерацию:', response.data);
-            setListings(response.data);
-        } catch (error) {
-            console.error('Ошибка загрузки объявлений:', error);
+            const res = await API.get('/moderation/pending-listings');
+            setListings(res.data || []);
+        } catch {
+            setListings([]);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    };
+    }, []);
 
-    const loadComplaints = async () => {
+    const loadComplaints = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await API.get('/moderation/complaints');
-            console.log('🚨 Получены жалобы:', response.data);
-            console.log('📊 Количество жалоб:', response.data?.length || 0);
-            setComplaints(response.data || []);
-        } catch (error) {
-            console.error('❌ Ошибка загрузки жалоб:', error);
-            console.error('Статус ошибки:', error.response?.status);
-            console.error('Данные ошибки:', error.response?.data);
+            const res = await API.get('/moderation/complaints?status_filter=pending');
+            setComplaints(res.data || []);
+        } catch {
             setComplaints([]);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        activeTab === 'listings' ? loadPendingListings() : loadComplaints();
+    }, [activeTab, loadPendingListings, loadComplaints]);
 
     const approveListing = async (listingId) => {
         try {
-            await API.put(`/moderation/approve-listing/${listingId}`);
+            await API.put(`/moderation/listings/${listingId}/approve`);
             loadPendingListings();
-        } catch (error) {
+        } catch {
             alert('Ошибка при одобрении');
         }
     };
 
     const rejectListing = async (listingId) => {
-        if (!window.confirm('Удалить объявление?')) return;
+        if (!window.confirm('Отклонить объявление?')) return;
         try {
-            await API.delete(`/moderation/reject-listing/${listingId}`);
+            await API.put(`/moderation/listings/${listingId}/reject`);
             loadPendingListings();
-        } catch (error) {
+        } catch {
             alert('Ошибка при отклонении');
         }
     };
 
-    const approveComplaint = async (complaintId, action) => {
+    const resolveComplaint = async (complaintId, action) => {
         try {
-            await API.put(`/moderation/complaints/${complaintId}/approve?action=${action}`);
+            await API.put(`/moderation/complaints/${complaintId}/resolve?action=${action}`);
             loadComplaints();
-        } catch (error) {
+        } catch {
             alert('Ошибка при обработке жалобы');
-        }
-    };
-
-    const rejectComplaint = async (complaintId) => {
-        try {
-            await API.put(`/moderation/complaints/${complaintId}/reject`);
-            loadComplaints();
-        } catch (error) {
-            alert('Ошибка при отклонении');
         }
     };
 
@@ -87,69 +76,64 @@ function Moderation() {
         return <div className="access-denied">Доступ запрещён</div>;
     }
 
-    const newComplaintsCount = complaints.filter(c => c.status === 'new').length;
+    const pendingCount = complaints.length;
 
     return (
         <div className="moderation-page">
-            <h1>🛡️ Модерация</h1>
+            <h1>Модерация</h1>
 
             <div className="moderation-tabs">
                 <button
                     className={`tab-btn ${activeTab === 'listings' ? 'active' : ''}`}
                     onClick={() => setActiveTab('listings')}
                 >
-                    📋 На модерацию ({listings.length})
+                    Объявления ({listings.length})
                 </button>
                 <button
                     className={`tab-btn ${activeTab === 'complaints' ? 'active' : ''}`}
                     onClick={() => setActiveTab('complaints')}
                 >
-                    🚨 Жалобы ({newComplaintsCount})
+                    Жалобы ({pendingCount})
                 </button>
             </div>
 
             {loading && <div className="loader">Загрузка...</div>}
 
+            {/* Объявления на модерацию */}
             {!loading && activeTab === 'listings' && (
                 <div className="listings-section">
                     {listings.length === 0 ? (
-                        <div className="empty-state">
-                            <p>✨ Нет объявлений на модерацию</p>
-                        </div>
+                        <p className="empty-state">Нет объявлений на модерацию</p>
                     ) : (
-                        <div className="listings-grid">
-                            {listings.map(listing => (
-                                <div key={listing.listing_id} className="listing-card">
-                                    <div className="card-image">
-                                        {listing.photos?.[0] ? (
-                                            <img src={listing.photos[0]} alt={listing.title} />
-                                        ) : (
-                                            <div className="no-image">📷</div>
-                                        )}
-                                    </div>
-                                    <div className="card-content">
-                                        <h3 className="card-title">{listing.title}</h3>
-                                        <p className="card-price">{listing.price?.toLocaleString()} ₽</p>
-                                        <p className="card-address">📍 {listing.address}</p>
-                                        <div className="card-details">
-                                            {listing.total_area && <span>📐 {listing.total_area} м²</span>}
-                                            {listing.rooms && <span>🛏 {listing.rooms} комн</span>}
-                                        </div>
-                                        <p className="card-description">
-                                            {listing.description?.substring(0, 100)}...
+                        <div className="moderation-list">
+                            {listings.map((listing) => (
+                                <div key={listing.listing_id} className="moderation-card">
+                                    <div className="moderation-card-body">
+                                        <h3>{listing.title}</h3>
+                                        <p>📍 {listing.address || 'Адрес не указан'}</p>
+                                        <p>
+                                            {listing.total_area && <span>📐 {listing.total_area} м² </span>}
+                                            {listing.rooms && <span>🛏 {listing.rooms} комн </span>}
+                                            <span>💰 {listing.price?.toLocaleString()} ₽</span>
+                                        </p>
+                                        <p className="moderation-description">
+                                            {listing.description?.substring(0, 150)}
+                                            {listing.description?.length > 150 && '...'}
                                         </p>
                                     </div>
-                                    <div className="card-actions">
-                                        <button
-                                            className="btn-approve"
-                                            onClick={() => approveListing(listing.listing_id)}
+                                    <div className="moderation-card-actions">
+                                        <a
+                                            href={`http://localhost:3000/listing/${listing.listing_id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-link"
                                         >
+                                            🔗 К объявлению
+                                        </a>
+                                        <button className="btn-approve" onClick={() => approveListing(listing.listing_id)}>
                                             ✅ Одобрить
                                         </button>
-                                        <button
-                                            className="btn-reject"
-                                            onClick={() => rejectListing(listing.listing_id)}
-                                        >
+                                        <button className="btn-reject" onClick={() => rejectListing(listing.listing_id)}>
                                             ❌ Отклонить
                                         </button>
                                     </div>
@@ -160,74 +144,68 @@ function Moderation() {
                 </div>
             )}
 
+            {/* Жалобы */}
             {!loading && activeTab === 'complaints' && (
                 <div className="complaints-section">
                     {complaints.length === 0 ? (
-                        <div className="empty-state">
-                            <p>✨ Нет жалоб</p>
-                            <p style={{ fontSize: '12px', marginTop: '10px', color: '#999' }}>
-                                Попробуйте создать тестовую жалобу через POST /api/complaints/1
-                            </p>
-                        </div>
+                        <p className="empty-state">Нет новых жалоб</p>
                     ) : (
-                        <div className="complaints-list">
-                            {complaints.map(complaint => (
-                                <div key={complaint.complaint_id} className="complaint-card">
-                                    <div className="complaint-header">
-                                        <div className="complaint-info">
-                                            <span className={`status-badge ${complaint.status}`}>
-                                                {complaint.status === 'new' ? '🟡 Новая' :
-                                                 complaint.status === 'approved' ? '✅ Одобрена' : '❌ Отклонена'}
-                                            </span>
-                                            <span className="complaint-type">
-                                                {complaint.complaint_type === 'spam' ? '📧 Спам' :
-                                                 complaint.complaint_type === 'fraud' ? '⚠️ Мошенничество' :
-                                                 complaint.complaint_type === 'incorrect_info' ? '📝 Недостоверная информация' :
-                                                 complaint.complaint_type === 'duplicate' ? '🔄 Дубликат' : '📌 Другое'}
+                        <div className="moderation-list">
+                            {complaints.map((c) => (
+                                <div key={c.complaint_id} className="moderation-card">
+                                    <div className="moderation-card-body">
+                                        <div className="complaint-header">
+                                            <span className="complaint-type-badge">
+                                                {COMPLAINT_TYPES[c.complaint_type_id] || 'Другое'}
                                             </span>
                                             <span className="complaint-date">
-                                                📅 {new Date(complaint.created_date).toLocaleDateString()}
+                                                {new Date(c.created_date).toLocaleDateString('ru-RU')}
                                             </span>
                                         </div>
-                                    </div>
-                                    <div className="complaint-body">
-                                        <div className="complaint-listing">
-                                            <strong>📢 Объявление:</strong> {complaint.listing?.title || 'Удалено'}
-                                        </div>
-                                        {complaint.description && (
-                                            <div className="complaint-description">
-                                                <strong>💬 Описание:</strong> {complaint.description}
-                                            </div>
+                                        <p>
+                                            <strong>Объявление:</strong>{' '}
+                                            {c.listing?.title || 'Удалено'}
+                                        </p>
+                                        <p>
+                                            <strong>Адрес:</strong>{' '}
+                                            {c.listing?.address || 'Не указан'}
+                                        </p>
+                                        {c.description && (
+                                            <p className="moderation-description">
+                                                <strong>Причина жалобы:</strong> {c.description}
+                                            </p>
                                         )}
                                     </div>
-                                    {complaint.status === 'new' && (
-                                        <div className="complaint-actions">
-                                            <select
-                                                className="action-select"
-                                                id={`action-${complaint.complaint_id}`}
+                                    <div className="moderation-card-actions">
+                                        {c.listing?.listing_id && (
+                                            <a
+                                                href={`http://localhost:3000/listing/${c.listing.listing_id}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn-link"
                                             >
-                                                <option value="hide_listing">🔒 Скрыть объявление</option>
-                                                <option value="delete_listing">🗑️ Удалить объявление</option>
-                                                <option value="warn_user">⚠️ Предупредить пользователя</option>
-                                                <option value="ban_user">🚫 Заблокировать пользователя</option>
-                                            </select>
-                                            <button
-                                                className="btn-approve"
-                                                onClick={() => {
-                                                    const select = document.getElementById(`action-${complaint.complaint_id}`);
-                                                    approveComplaint(complaint.complaint_id, select.value);
-                                                }}
-                                            >
-                                                ✅ Одобрить жалобу
-                                            </button>
-                                            <button
-                                                className="btn-reject"
-                                                onClick={() => rejectComplaint(complaint.complaint_id)}
-                                            >
-                                                ❌ Отклонить
-                                            </button>
-                                        </div>
-                                    )}
+                                                🔗 К объявлению
+                                            </a>
+                                        )}
+                                        <button
+                                            className="btn-dismiss"
+                                            onClick={() => resolveComplaint(c.complaint_id, 'dismiss')}
+                                        >
+                                            ✅ Всё в порядке
+                                        </button>
+                                        <button
+                                            className="btn-approve btn-sm"
+                                            onClick={() => resolveComplaint(c.complaint_id, 'hide_listing')}
+                                        >
+                                            🙈 Скрыть
+                                        </button>
+                                        <button
+                                            className="btn-reject btn-sm"
+                                            onClick={() => resolveComplaint(c.complaint_id, 'delete_listing')}
+                                        >
+                                            🗑 Удалить
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

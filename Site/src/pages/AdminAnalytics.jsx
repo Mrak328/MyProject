@@ -1,354 +1,246 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../services/api';
 import './AdminAnalytics.css';
+
+const PERIOD_OPTIONS = [
+    { value: 'day', label: 'День' },
+    { value: 'week', label: 'Неделя' },
+    { value: 'month', label: 'Месяц' }
+];
+
+const INITIAL_DASHBOARD = { total_listings: 0, active_today: 0, views_today: 0, new_listings_today: 0 };
+const INITIAL_PRICE_STATS = { total_active: 0, avg_price: 0, avg_price_per_m2: 0, min_price: 0, max_price: 0, price_ranges: {}, by_type: [] };
+const INITIAL_VIEWS_STATS = { total_views: 0, unique_listings: 0, unique_visitors: 0, views_by_day: [] };
+const INITIAL_SEARCH = { popular_queries: [] };
+const INITIAL_CLOSED_DEALS = { total_closed: 0, total_revenue: 0, avg_days_to_sell: 0, by_type: [] };
 
 function AdminAnalytics() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [period, setPeriod] = useState('week');
 
-    // Данные с бэкенда
-    const [dashboard, setDashboard] = useState(null);
+    const [dashboard, setDashboard] = useState(INITIAL_DASHBOARD);
     const [popularListings, setPopularListings] = useState([]);
-    const [searchQueries, setSearchQueries] = useState([]);
-    const [priceStats, setPriceStats] = useState(null);
-    const [viewsStats, setViewsStats] = useState(null);
-    const [closedDeals, setClosedDeals] = useState(null);
+    const [searchQueries, setSearchQueries] = useState(INITIAL_SEARCH);
+    const [priceStats, setPriceStats] = useState(INITIAL_PRICE_STATS);
+    const [viewsStats, setViewsStats] = useState(INITIAL_VIEWS_STATS);
+    const [closedDeals, setClosedDeals] = useState(INITIAL_CLOSED_DEALS);
 
-    useEffect(() => {
-        loadAllAnalytics();
-    }, [period]);
-
-    const loadAllAnalytics = async () => {
+    const loadAllAnalytics = useCallback(async () => {
         setLoading(true);
         setError(null);
-
         try {
-            // Для closed_deals используем заглушку для дня
-            let closedDealsPromise;
-            if (period === 'day') {
-                closedDealsPromise = Promise.resolve({
-                    data: {
-                        total_closed: 0,
-                        total_revenue: 0,
-                        avg_days_to_sell: 0,
-                        by_type: []
-                    }
-                });
-            } else {
-                closedDealsPromise = API.get(`/analytics/closed_deals?period=${period}`);
-            }
-
-            const [dashboardData, popularData, searchData, viewsData, priceData, closedData] = await Promise.all([
-                API.get('/analytics/dashboard?days=30'),
+            const [dashRes, popularRes, searchRes, viewsRes, priceRes, closedRes] = await Promise.all([
+                API.get('/analytics/dashboard'),
                 API.get(`/analytics/listings/popular?period=${period}&limit=10`),
-                API.get('/analytics/search/queries?days=7'),
+                API.get('/analytics/search/queries?days=30'),
                 API.get(`/analytics/views?period=${period}`),
                 API.get('/analytics/prices'),
-                closedDealsPromise
+                API.get(`/analytics/deals/closed?period=${period === 'day' ? 'week' : period}`)
             ]);
 
-            setDashboard(dashboardData.data);
-            setPopularListings(popularData.data || []);
-            setSearchQueries(searchData.data?.popular_queries || []);
-            setViewsStats(viewsData.data);
-            setPriceStats(priceData.data);
-            setClosedDeals(closedData.data);
-
+            setDashboard(dashRes.data || INITIAL_DASHBOARD);
+            setPopularListings(popularRes.data || []);
+            setSearchQueries(searchRes.data || INITIAL_SEARCH);
+            setViewsStats(viewsRes.data || INITIAL_VIEWS_STATS);
+            setPriceStats(priceRes.data || INITIAL_PRICE_STATS);
+            setClosedDeals(closedRes.data || INITIAL_CLOSED_DEALS);
         } catch (err) {
-            console.error('Ошибка загрузки аналитики:', err);
-            if (err.response) {
-                console.error('Статус:', err.response.status);
-                console.error('Данные:', err.response.data);
-            }
-            setError(`Не удалось загрузить данные аналитики: ${err.message}`);
+            setError('Не удалось загрузить аналитику');
         } finally {
             setLoading(false);
         }
-    };
+    }, [period]);
 
-    // Функция для безопасного форматирования чисел
-    const formatNumber = (num) => {
-        if (num === undefined || num === null) return '0';
-        return num.toLocaleString('ru-RU');
-    };
+    useEffect(() => {
+        loadAllAnalytics();
+    }, [loadAllAnalytics]);
 
-    // Функция для перевода периода на русский
-    const getPeriodText = (period) => {
-        switch(period) {
-            case 'day': return 'день';
-            case 'week': return 'неделю';
-            case 'month': return 'месяц';
-            default: return period;
-        }
-    };
+    const formatNumber = (num) => (num ?? 0).toLocaleString('ru-RU');
 
-    if (loading) return <div className="loader">📊 Загрузка аналитики...</div>;
-    if (error) return <div className="error">❌ {error}</div>;
+    if (loading) return <div className="loader">Загрузка аналитики...</div>;
+    if (error) return <div className="error">{error}</div>;
 
     return (
         <div className="analytics-page">
-            <h1>📊 Аналитика</h1>
+            <h1>Аналитика</h1>
 
-            {/* Кнопки периода */}
             <div className="period-selector">
-                <button
-                    className={period === 'day' ? 'active' : ''}
-                    onClick={() => setPeriod('day')}
-                >
-                    День
-                </button>
-                <button
-                    className={period === 'week' ? 'active' : ''}
-                    onClick={() => setPeriod('week')}
-                >
-                    Неделя
-                </button>
-                <button
-                    className={period === 'month' ? 'active' : ''}
-                    onClick={() => setPeriod('month')}
-                >
-                    Месяц
-                </button>
+                {PERIOD_OPTIONS.map((opt) => (
+                    <button
+                        key={opt.value}
+                        className={period === opt.value ? 'active' : ''}
+                        onClick={() => setPeriod(opt.value)}
+                    >
+                        {opt.label}
+                    </button>
+                ))}
             </div>
 
-            {/* Dashboard метрики */}
-            {dashboard && (
-                <div className="metrics-grid">
-                    <div className="metric-card">
-                        <h3>Всего объявлений</h3>
-                        <p className="metric-value">{dashboard.total_listings || 0}</p>
+            {/* Метрики */}
+            <div className="metrics-grid">
+                <div className="metric-card">
+                    <h3>Всего объявлений</h3>
+                    <p className="metric-value">{dashboard.total_listings}</p>
+                </div>
+                <div className="metric-card">
+                    <h3>Активных сегодня</h3>
+                    <p className="metric-value">{dashboard.active_today}</p>
+                </div>
+                <div className="metric-card">
+                    <h3>Просмотров сегодня</h3>
+                    <p className="metric-value">{dashboard.views_today}</p>
+                </div>
+                <div className="metric-card">
+                    <h3>Новых сегодня</h3>
+                    <p className="metric-value">{dashboard.new_listings_today}</p>
+                </div>
+            </div>
+
+            {/* Просмотры */}
+            <div className="analytics-card">
+                <h2>Статистика просмотров</h2>
+                <div className="stats-grid">
+                    <div className="stat-item highlight">
+                        <span className="stat-label">Всего просмотров:</span>
+                        <span className="stat-value large">{formatNumber(viewsStats.total_views)}</span>
                     </div>
-                    <div className="metric-card">
-                        <h3>Активных сегодня</h3>
-                        <p className="metric-value">{dashboard.active_today || 0}</p>
+                    <div className="stat-item">
+                        <span className="stat-label">Уникальных объявлений:</span>
+                        <span className="stat-value">{viewsStats.unique_listings}</span>
                     </div>
-                    <div className="metric-card">
-                        <h3>Просмотров сегодня</h3>
-                        <p className="metric-value">{dashboard.views_today || 0}</p>
-                    </div>
-                    <div className="metric-card">
-                        <h3>Новых сегодня</h3>
-                        <p className="metric-value">{dashboard.new_listings_today || 0}</p>
+                    <div className="stat-item">
+                        <span className="stat-label">Уникальных посетителей:</span>
+                        <span className="stat-value">{viewsStats.unique_visitors}</span>
                     </div>
                 </div>
-            )}
-
-            {/* Статистика просмотров */}
-            {viewsStats && (
-                <div className="analytics-card">
-                    <h2>👁 Статистика просмотров за {getPeriodText(period)}</h2>
-                    <div className="stats-grid">
-                        <div className="stat-item highlight">
-                            <span className="stat-label">Всего просмотров:</span>
-                            <span className="stat-value large">{formatNumber(viewsStats.total_views)}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Уникальных объявлений:</span>
-                            <span className="stat-value">{viewsStats.unique_listings || 0}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Уникальных посетителей:</span>
-                            <span className="stat-value">{viewsStats.unique_visitors || 0}</span>
-                        </div>
-                    </div>
-
-                    {/* Просмотры по дням */}
-                    {viewsStats.views_by_day && viewsStats.views_by_day.length > 0 && (
-                        <>
-                            <h3>Просмотры по дням</h3>
-                            <div className="mini-stats">
-                                {viewsStats.views_by_day.map((day, idx) => (
-                                    <div key={idx} className="mini-stat-item">
-                                        <span className="mini-stat-date">{day.date}</span>
-                                        <span className="mini-stat-count">{day.count}</span>
-                                    </div>
-                                ))}
+                {viewsStats.views_by_day?.length > 0 && (
+                    <div className="mini-stats">
+                        {viewsStats.views_by_day.map((day, idx) => (
+                            <div key={idx} className="mini-stat-item">
+                                <span className="mini-stat-date">{day.date}</span>
+                                <span className="mini-stat-count">{day.views}</span>
                             </div>
-                        </>
-                    )}
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Цены */}
+            <div className="analytics-card">
+                <h2>Статистика цен</h2>
+                <div className="stats-grid">
+                    <div className="stat-item highlight">
+                        <span className="stat-label">Всего активных:</span>
+                        <span className="stat-value large">{priceStats.total_active}</span>
+                    </div>
+                    <div className="stat-item highlight">
+                        <span className="stat-label">Средняя цена:</span>
+                        <span className="stat-value large">{formatNumber(priceStats.avg_price)} ₽</span>
+                    </div>
+                    <div className="stat-item highlight">
+                        <span className="stat-label">Цена за м²:</span>
+                        <span className="stat-value large">{formatNumber(priceStats.avg_price_per_m2)} ₽</span>
+                    </div>
                 </div>
-            )}
-
-            {/* Детальная статистика цен */}
-            {priceStats && (
-                <div className="analytics-card">
-                    <h2>💰 Детальная статистика цен</h2>
-
-                    {/* Основные метрики */}
-                    <div className="stats-grid">
-                        <div className="stat-item highlight">
-                            <span className="stat-label">Всего активных:</span>
-                            <span className="stat-value large">{priceStats.total_active || 0}</span>
-                        </div>
-                        <div className="stat-item highlight">
-                            <span className="stat-label">Средняя цена:</span>
-                            <span className="stat-value large">{formatNumber(priceStats.avg_price)} ₽</span>
-                        </div>
-                        <div className="stat-item highlight">
-                            <span className="stat-label">Цена за м²:</span>
-                            <span className="stat-value large">{formatNumber(priceStats.avg_price_per_m2)} ₽</span>
-                        </div>
+                <div className="stats-mini-grid">
+                    <div className="stat-mini-item">
+                        <span className="stat-mini-label">Мин:</span>
+                        <span className="stat-mini-value">{formatNumber(priceStats.min_price)} ₽</span>
                     </div>
-
-                    {/* Минимальная и максимальная цена */}
-                    <div className="stats-mini-grid">
-                        <div className="stat-mini-item">
-                            <span className="stat-mini-label">Минимальная цена:</span>
-                            <span className="stat-mini-value">{formatNumber(priceStats.min_price)} ₽</span>
-                        </div>
-                        <div className="stat-mini-item">
-                            <span className="stat-mini-label">Максимальная цена:</span>
-                            <span className="stat-mini-value">{formatNumber(priceStats.max_price)} ₽</span>
-                        </div>
+                    <div className="stat-mini-item">
+                        <span className="stat-mini-label">Макс:</span>
+                        <span className="stat-mini-value">{formatNumber(priceStats.max_price)} ₽</span>
                     </div>
-
-                    {/* Распределение по ценовым диапазонам */}
-                    {priceStats.price_ranges && (
-                        <>
-                            <h3>📊 Распределение по ценам</h3>
-                            <div className="price-ranges">
-                                {Object.entries(priceStats.price_ranges).map(([range, count]) => (
-                                    <div key={range} className="price-range-item">
-                                        <span className="range-label">{range}:</span>
-                                        <span className="range-count">{count}</span>
-                                        <span className="range-percent">
-                                            ({priceStats.total_active ? ((count / priceStats.total_active) * 100).toFixed(1) : 0}%)
-                                        </span>
-                                    </div>
-                                ))}
+                </div>
+                {priceStats.price_ranges && Object.keys(priceStats.price_ranges).length > 0 && (
+                    <div className="price-ranges">
+                        {Object.entries(priceStats.price_ranges).map(([range, count]) => (
+                            <div key={range} className="price-range-item">
+                                <span className="range-label">{range}:</span>
+                                <span className="range-count">{count}</span>
+                                <span className="range-percent">
+                                    ({priceStats.total_active ? ((count / priceStats.total_active) * 100).toFixed(1) : 0}%)
+                                </span>
                             </div>
-                        </>
-                    )}
-
-                    {/* Статистика по типам */}
-                    {priceStats.by_type && priceStats.by_type.length > 0 && (
-                        <>
-                            <h3>🏠 По типам недвижимости</h3>
-                            <table className="stats-table">
-                                <thead>
-                                    <tr>
-                                        <th>Тип</th>
-                                        <th>Кол-во</th>
-                                        <th>Средняя цена</th>
-                                        <th>Мин</th>
-                                        <th>Макс</th>
-                                        <th>₽/м²</th>
-                                        <th>Общая стоимость</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {priceStats.by_type.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td><strong>{item.type}</strong></td>
-                                            <td>{item.count}</td>
-                                            <td>{formatNumber(item.avg_price)} ₽</td>
-                                            <td>{formatNumber(item.min_price)} ₽</td>
-                                            <td>{formatNumber(item.max_price)} ₽</td>
-                                            <td>{formatNumber(item.avg_price_per_m2)} ₽</td>
-                                            <td>{formatNumber(item.total_value)} ₽</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </>
-                    )}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+                {priceStats.by_type?.length > 0 && (
+                    <table className="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Тип</th>
+                                <th>Кол-во</th>
+                                <th>Средняя цена</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {priceStats.by_type.map((item, idx) => (
+                                <tr key={idx}>
+                                    <td><strong>{item.property_type}</strong></td>
+                                    <td>{item.count}</td>
+                                    <td>{formatNumber(item.avg_price)} ₽</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
 
             {/* Закрытые сделки */}
-            {closedDeals && closedDeals.total_closed > 0 && (
+            {closedDeals.total_closed > 0 && (
                 <div className="analytics-card">
-                    <h2>✅ Закрытые сделки за {getPeriodText(period)}</h2>
+                    <h2>Закрытые сделки</h2>
                     <div className="stats-grid">
                         <div className="stat-item highlight">
-                            <span className="stat-label">Продано объектов:</span>
-                            <span className="stat-value large">{closedDeals.total_closed || 0}</span>
+                            <span className="stat-label">Продано:</span>
+                            <span className="stat-value large">{closedDeals.total_closed}</span>
                         </div>
                         <div className="stat-item highlight">
-                            <span className="stat-label">Общая выручка:</span>
+                            <span className="stat-label">Выручка:</span>
                             <span className="stat-value large">{formatNumber(closedDeals.total_revenue)} ₽</span>
                         </div>
                         <div className="stat-item highlight">
-                            <span className="stat-label">Среднее время продажи:</span>
-                            <span className="stat-value large">{closedDeals.avg_days_to_sell || 0} дней</span>
+                            <span className="stat-label">Среднее время:</span>
+                            <span className="stat-value large">{closedDeals.avg_days_to_sell} дн</span>
                         </div>
                     </div>
-
-                    {closedDeals.by_type && closedDeals.by_type.length > 0 && (
-                        <>
-                            <h3>По типам недвижимости</h3>
-                            <table className="stats-table">
-                                <thead>
-                                    <tr>
-                                        <th>Тип</th>
-                                        <th>Продано</th>
-                                        <th>Средняя цена</th>
-                                        <th>Выручка</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {closedDeals.by_type.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td><strong>{item.type}</strong></td>
-                                            <td>{item.count}</td>
-                                            <td>{formatNumber(item.avg_price)} ₽</td>
-                                            <td>{formatNumber(item.total_revenue)} ₽</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </>
-                    )}
                 </div>
             )}
 
-            {/* Две колонки: популярные объявления и поисковые запросы */}
+            {/* Популярные + Поиск */}
             <div className="analytics-columns">
-                {/* Популярные объявления */}
                 <div className="analytics-card">
-                    <h2>🔥 Популярные за {getPeriodText(period)}</h2>
+                    <h2>Популярные объявления</h2>
                     <div className="listings-list">
-                        {popularListings.length > 0 ? (
-                            popularListings.map((item, index) => (
-                                <div key={item.listing_id || index} className="listing-item">
-                                    <span className="rank">{index + 1}</span>
-                                    {item.photo && (
-                                        <img src={item.photo} alt="" className="listing-thumb" />
-                                    )}
-                                    <div className="listing-info">
-                                        <h4>{item.title || 'Без названия'}</h4>
-                                        <p>{item.address || 'Адрес не указан'}</p>
-                                    </div>
-                                    <div className="listing-stats">
-                                        <span className="views">👁 {item.views || 0}</span>
-                                        <span className="price">
-                                            {formatNumber(item.price)} ₽
-                                        </span>
-                                    </div>
+                        {popularListings?.length > 0 ? popularListings.map((item, i) => (
+                            <div key={item.listing_id || i} className="listing-item">
+                                <span className="rank">{i + 1}</span>
+                                {item.photo && <img src={item.photo} alt="" className="listing-thumb" />}
+                                <div className="listing-info">
+                                    <h4>{item.title || 'Без названия'}</h4>
+                                    <p>{item.address || 'Адрес не указан'}</p>
                                 </div>
-                            ))
-                        ) : (
-                            <p className="no-data">Нет данных за {getPeriodText(period)}</p>
-                        )}
+                                <div className="listing-stats">
+                                    <span className="views">👁 {item.views}</span>
+                                    <span className="price">{formatNumber(item.price)} ₽</span>
+                                </div>
+                            </div>
+                        )) : <p className="no-data">Нет данных</p>}
                     </div>
                 </div>
 
-                {/* Популярные поисковые запросы */}
                 <div className="analytics-card">
-                    <h2>🔍 Популярные запросы</h2>
+                    <h2>Поисковые запросы</h2>
                     <div className="queries-list">
-                        {searchQueries.length > 0 ? (
-                            searchQueries.map((item, index) => (
-                                <div key={index} className="query-item">
-                                    <span className="rank">{index + 1}</span>
-                                    <span className="query">"{item.query || 'пустой запрос'}"</span>
-                                    <span className="count">{item.count || 0} раз</span>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="no-data">Нет данных о поиске</p>
-                        )}
+                        {searchQueries.popular_queries?.length > 0 ? searchQueries.popular_queries.map((item, i) => (
+                            <div key={i} className="query-item">
+                                <span className="rank">{i + 1}</span>
+                                <span className="query">"{item.query || 'пустой запрос'}"</span>
+                                <span className="count">{item.count} раз</span>
+                            </div>
+                        )) : <p className="no-data">Нет данных</p>}
                     </div>
                 </div>
             </div>

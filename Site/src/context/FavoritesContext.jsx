@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getFavorites, addToFavorites, removeFromFavorites } from '../services/favorites';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { addFavorite, removeFavorite, checkFavorite } from '../services/favorites';
 import { useAuth } from './AuthContext';
 
 const FavoritesContext = createContext();
@@ -7,61 +7,71 @@ const FavoritesContext = createContext();
 export const useFavorites = () => useContext(FavoritesContext);
 
 export const FavoritesProvider = ({ children }) => {
-  const { user } = useAuth();
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(false);
+    const { user, isAuthenticated } = useAuth();
+    const [favoriteIds, setFavoriteIds] = useState(new Set());
+    const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadFavorites();
-    } else {
-      setFavorites([]);
-    }
-  }, [user]);
+    // Сброс при логауте
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setFavoriteIds(new Set());
+        }
+    }, [isAuthenticated]);
 
-  const loadFavorites = async () => {
-    setLoading(true);
-    try {
-      const data = await getFavorites(user.user_id);
-      setFavorites(data);
-    } catch (error) {
-      console.error('Ошибка загрузки избранного:', error);
-    }
-    setLoading(false);
-  };
+    const isFavorite = useCallback((listingId) => {
+        return favoriteIds.has(listingId);
+    }, [favoriteIds]);
 
-  const addFavorite = async (userId, listingId) => {
-    try {
-      await addToFavorites(userId, listingId);
-      await loadFavorites();
-    } catch (error) {
-      console.error('Ошибка добавления в избранное:', error);
-    }
-  };
+    const check = useCallback(async (listingId) => {
+        if (!isAuthenticated) return false;
+        try {
+            const result = await checkFavorite(listingId);
+            return result?.is_favorite || false;
+        } catch {
+            return false;
+        }
+    }, [isAuthenticated]);
 
-  const removeFavorite = async (userId, listingId) => {
-    try {
-      await removeFromFavorites(userId, listingId);
-      await loadFavorites();
-    } catch (error) {
-      console.error('Ошибка удаления из избранного:', error);
-    }
-  };
+    const toggle = useCallback(async (listingId) => {
+        if (!isAuthenticated) return;
+        setLoading(true);
+        const wasFavorite = favoriteIds.has(listingId);
 
-  const isFavorite = (listingId) => {
-    return favorites.some(fav => fav.listing_id === listingId);
-  };
+        // Оптимистичное обновление
+        setFavoriteIds((prev) => {
+            const next = new Set(prev);
+            wasFavorite ? next.delete(listingId) : next.add(listingId);
+            return next;
+        });
 
-  return (
-    <FavoritesContext.Provider value={{
-      favorites,
-      loading,
-      addFavorite,
-      removeFavorite,
-      isFavorite,
-      refreshFavorites: loadFavorites
-    }}>
-      {children}
-    </FavoritesContext.Provider>
-  );
+        try {
+            if (wasFavorite) {
+                await removeFavorite(listingId);
+            } else {
+                await addFavorite(listingId);
+            }
+        } catch {
+            // Откат при ошибке
+            setFavoriteIds((prev) => {
+                const next = new Set(prev);
+                wasFavorite ? next.add(listingId) : next.delete(listingId);
+                return next;
+            });
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, favoriteIds]);
+
+    return (
+        <FavoritesContext.Provider value={{
+            favoriteIds,
+            loading,
+            isFavorite,
+            check,
+            toggle,
+            count: favoriteIds.size
+        }}>
+            {children}
+        </FavoritesContext.Provider>
+    );
 };

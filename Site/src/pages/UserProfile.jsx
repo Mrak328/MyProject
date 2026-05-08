@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { getUser, getUserListings } from '../services/users';
+import API from '../services/api';
 import ListingCard from '../components/ListingCard';
 import './UserProfile.css';
 
@@ -11,27 +11,26 @@ function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        loadUserData();
-    }, [id]);
-
-    const loadUserData = async () => {
+    const loadUserData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const [userData, listingsData] = await Promise.all([
-                getUser(id),
-                getUserListings(id)
+            const [userRes, listingsRes] = await Promise.all([
+                API.get(`/users/${id}`),
+                API.get('/listings/search', { params: { user_id: id } }) // или свой эндпоинт
             ]);
-            setUser(userData);
-            setListings(listingsData);
+            setUser(userRes.data);
+            setListings(listingsRes.data?.items || listingsRes.data || []);
         } catch (err) {
-            console.error('Ошибка загрузки:', err);
-            setError(err.response?.data?.detail || 'Не удалось загрузить данные пользователя');
+            setError(err.response?.data?.detail || 'Не удалось загрузить данные');
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        loadUserData();
+    }, [loadUserData]);
 
     if (loading) return <div className="loader">Загрузка...</div>;
 
@@ -52,28 +51,17 @@ function UserProfile() {
                         <img src={user.avatar_url} alt={user.first_name} />
                     ) : (
                         <div className="avatar-placeholder">
-                            {user.first_name?.charAt(0) || '👤'}
+                            {user.first_name?.charAt(0) || '?'}
                         </div>
                     )}
                 </div>
                 <div className="profile-info">
                     <h1>{user.first_name}</h1>
-                    <div className="stats">
-                        <div className="stat">
-                            <span className="stat-value">{user.rating || 0}</span>
-                            <span className="stat-label">⭐ Рейтинг</span>
-                        </div>
-                        <div className="stat">
-                            <span className="stat-value">{user.reviews_count || 0}</span>
-                            <span className="stat-label">📝 Отзывов</span>
-                        </div>
-                        <div className="stat">
-                            <span className="stat-value">{listings.length}</span>
-                            <span className="stat-label">🏠 Объявлений</span>
-                        </div>
-                    </div>
                     <p className="registered">
                         На сайте с {new Date(user.registration_date).toLocaleDateString('ru-RU')}
+                    </p>
+                    <p className="stat">
+                        🏠 Объявлений: {listings.length}
                     </p>
                 </div>
             </div>
@@ -84,7 +72,7 @@ function UserProfile() {
                     <p className="no-listings">У пользователя пока нет объявлений</p>
                 ) : (
                     <div className="listings-grid">
-                        {listings.map(listing => (
+                        {listings.map((listing) => (
                             <ListingCard key={listing.listing_id} listing={listing} />
                         ))}
                     </div>

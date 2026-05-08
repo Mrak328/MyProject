@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { login as apiLogin, checkAuth, logout as apiLogout, setAuthToken } from '../services/auth';
 
 const AuthContext = createContext();
@@ -10,52 +10,50 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Проверка токена при загрузке
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('token');
-
-            if (token) {
-                setAuthToken(token);
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+            setAuthToken(token);
+            try {
                 const userData = await checkAuth();
-                if (userData) {
-                    setUser(userData);
-                } else {
-                    localStorage.removeItem('token');
-                }
+                setUser(userData);
+            } catch {
+                localStorage.removeItem('token');
+                setAuthToken(null);
             }
             setLoading(false);
         };
         initAuth();
     }, []);
 
-    const login = async (emailOrPhone, password) => {
+    const login = useCallback(async (emailOrPhone, password) => {
         setError(null);
         try {
             const data = await apiLogin(emailOrPhone, password);
-            const { access_token } = data;
-
-            localStorage.setItem('token', access_token);
-            setAuthToken(access_token);
-
+            localStorage.setItem('token', data.access_token);
+            setAuthToken(data.access_token);
             const userData = await checkAuth();
-
-            if (userData) {
-                setUser(userData);
-                return true;
-            }
-            return false;
+            setUser(userData);
+            return true;
         } catch (err) {
             setError(err.response?.data?.detail || 'Ошибка входа');
             return false;
         }
-    };
+    }, []);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         apiLogout();
+        localStorage.removeItem('token');
+        setAuthToken(null);
         setUser(null);
-    };
+    }, []);
 
-    // Проверки ролей
+    const isAuthenticated = !!user;
     const isAdmin = user?.role_id === 1;
     const isModerator = user?.role_id === 2;
     const isUser = user?.role_id === 3;
@@ -67,10 +65,10 @@ export const AuthProvider = ({ children }) => {
             error,
             login,
             logout,
+            isAuthenticated,
             isAdmin,
             isModerator,
-            isUser,
-            isAuthenticated: !!user
+            isUser
         }}>
             {children}
         </AuthContext.Provider>

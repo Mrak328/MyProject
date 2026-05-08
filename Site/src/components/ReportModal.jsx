@@ -1,35 +1,43 @@
 import React, { useState } from 'react';
 import { createComplaint } from '../services/complaints';
 
+// Маппинг complaint_type_id из БД
+const COMPLAINT_TYPES = [
+    { id: 1, label: 'Спам' },
+    { id: 2, label: 'Мошенничество' },
+    { id: 3, label: 'Неактуальное объявление' },
+    { id: 4, label: 'Оскорбление' },
+    { id: 5, label: 'Запрещённый контент' },
+    { id: 6, label: 'Дубликат' },
+    { id: 7, label: 'Неверная цена' },
+    { id: 8, label: 'Чужие фото' },
+    { id: 9, label: 'Фишинг' },
+    { id: 10, label: 'Другое' }
+];
+
 function ReportModal({ listingId, onClose, onSuccess }) {
-    const [complaintType, setComplaintType] = useState('');
+    const [complaintTypeId, setComplaintTypeId] = useState('');
     const [description, setDescription] = useState('');
     const [loading, setLoading] = useState(false);
-
-    const complaintTypes = [
-        { value: 'spam', label: 'Спам' },
-        { value: 'fraud', label: 'Мошенничество' },
-        { value: 'incorrect_info', label: 'Недостоверная информация' },
-        { value: 'duplicate', label: 'Дубликат' },
-        { value: 'other', label: 'Другое' }
-    ];
+    const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!complaintType) {
-            alert('Выберите причину жалобы');
+        if (!complaintTypeId) {
+            setError('Выберите причину жалобы');
             return;
         }
         setLoading(true);
+        setError('');
         try {
-            await createComplaint(listingId, complaintType, description);
-            alert('Жалоба отправлена на модерацию');
-            if (onSuccess) onSuccess();
+            await createComplaint(listingId, Number(complaintTypeId), description);
+            onSuccess?.();
             onClose();
-        } catch (error) {
-            alert(error.response?.data?.detail || 'Ошибка при отправке жалобы');
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Ошибка при отправке жалобы');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
@@ -38,23 +46,30 @@ function ReportModal({ listingId, onClose, onSuccess }) {
                 <h3>Пожаловаться на объявление</h3>
                 <form onSubmit={handleSubmit}>
                     <select
-                        value={complaintType}
-                        onChange={(e) => setComplaintType(e.target.value)}
+                        value={complaintTypeId}
+                        onChange={(e) => setComplaintTypeId(e.target.value)}
                         required
                     >
                         <option value="">Выберите причину</option>
-                        {complaintTypes.map(t => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
+                        {COMPLAINT_TYPES.map((t) => (
+                            <option key={t.id} value={t.id}>{t.label}</option>
                         ))}
                     </select>
+
                     <textarea
                         placeholder="Дополнительная информация (необязательно)"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows="4"
+                        maxLength={500}
                     />
+
+                    {error && <p className="modal-error">{error}</p>}
+
                     <div className="modal-buttons">
-                        <button type="button" onClick={onClose}>Отмена</button>
+                        <button type="button" onClick={onClose} disabled={loading}>
+                            Отмена
+                        </button>
                         <button type="submit" disabled={loading}>
                             {loading ? 'Отправка...' : 'Отправить жалобу'}
                         </button>

@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ListingCard from '../components/ListingCard';
 import SearchForm from '../components/SearchForm';
 import { searchListings } from '../services/listings';
 import './Home.css';
+
+const PAGE_SIZE = 20;
+
+const INITIAL_FILTERS = {
+    query: '', city: '', minPrice: '', maxPrice: '', minArea: '', maxArea: '',
+    rooms: null, floor: '', dealTypeId: '', propertyTypeId: '', renovationId: '',
+    sortBy: 'date_desc'
+};
 
 function Home() {
     const [listings, setListings] = useState([]);
@@ -10,37 +18,39 @@ function Home() {
     const [error, setError] = useState(null);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
-    const [filters, setFilters] = useState({
-        query: '', city: '', minPrice: '', maxPrice: '', minArea: '', maxArea: '',
-        rooms: null, floor: '', maxFloor: '', renovationId: '', propertyTypeId: '', dealTypeId: '', sortBy: 'date_desc'
-    });
+    const [filters, setFilters] = useState(INITIAL_FILTERS);
 
-    useEffect(() => {
-        loadListings();
-    }, [filters, page]);
-
-    const loadListings = async () => {
+    const loadListings = useCallback(async () => {
         setLoading(true);
         setError(null);
-
         try {
-            const data = await searchListings(filters, page, 20);
-            setListings(data.items || []);
+            const data = await searchListings(filters, page, PAGE_SIZE);
+            setListings((prev) => page === 1 ? data.items || [] : [...prev, ...(data.items || [])]);
             setTotal(data.total || 0);
-        } catch (err) {
+        } catch {
             setError('Не удалось загрузить объявления');
-            setListings([]);
+            if (page === 1) setListings([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, page]);
 
-    const handleFilterChange = (newFilters) => {
+    useEffect(() => {
+        loadListings();
+    }, [loadListings]);
+
+    const handleFilterChange = useCallback((newFilters) => {
         setFilters(newFilters);
         setPage(1);
-    };
+        setListings([]);
+    }, []);
 
-    const totalPages = Math.ceil(total / 20);
+    const handleLoadMore = useCallback(() => {
+        setPage((p) => p + 1);
+    }, []);
+
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const hasMore = page < totalPages;
 
     return (
         <div>
@@ -57,7 +67,7 @@ function Home() {
             ) : (
                 <>
                     <div className="listings-grid">
-                        {listings.map(listing => (
+                        {listings.map((listing) => (
                             <ListingCard key={listing.listing_id} listing={listing} />
                         ))}
                     </div>
@@ -69,10 +79,10 @@ function Home() {
                         </div>
                     )}
 
-                    {page < totalPages && (
+                    {hasMore && (
                         <div className="load-more">
-                            <button onClick={() => setPage(p => p + 1)} disabled={loading}>
-                                {loading ? 'Загрузка...' : 'Показать еще'}
+                            <button onClick={handleLoadMore} disabled={loading}>
+                                {loading ? 'Загрузка...' : 'Показать ещё'}
                             </button>
                         </div>
                     )}

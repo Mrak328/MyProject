@@ -1,24 +1,22 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from decimal import Decimal
 
 
-class FavoriteBase(BaseModel):
-    note: Optional[str] = None
-
-
-class FavoriteCreate(FavoriteBase):
+class FavoriteCreate(BaseModel):
     user_id: int
     listing_id: int
 
 
-class FavoriteResponse(FavoriteBase):
-    id: int
+class FavoriteResponse(BaseModel):
+    favorite_id: int
     user_id: int
     listing_id: int
-    created_at: datetime
+    added_date: Optional[datetime] = None
     listing_title: Optional[str] = None
-    listing_price: Optional[float] = None
+    listing_price: Optional[Decimal] = None
+    listing_photo: Optional[str] = None
 
     class Config:
         from_attributes = True

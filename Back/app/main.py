@@ -2,22 +2,27 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+import logging
 
 from app.core.config import settings
-from app.database import engine, Base  # ←
-from app.models import *
+from app.database import engine, Base
+from app.models import *  # noqa: F401, F403
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Недвижимость API",
+    title=settings.APP_NAME,
     description="API для сайта недвижимости",
-    version="1.0.0"
+    version=settings.APP_VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,33 +32,30 @@ app.add_middleware(
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Импортируем роутеры
-from app.routers.users import router as users_router
-from app.routers.listings import router as listings_router
-from app.routers.photos import router as photos_router
-from app.routers.reviews import router as reviews_router
-from app.routers.favorites import router as favorites_router
-from app.routers.analytics import router as analytics_router
-from app.routers.auth import router as auth_router
-from app.routers.public import router as public_router
-from app.routers.subscriptions import router as subscriptions_router
-from app.routers import moderation
-from app.routers import favorites, complaints
+# Роутеры
+from app.routers import routers  # noqa: E402
 
-# Подключаем роутеры
-app.include_router(users_router, prefix="/api")
-app.include_router(listings_router, prefix="/api")
-app.include_router(photos_router, prefix="/api")
-app.include_router(reviews_router, prefix="/api")
-app.include_router(favorites_router, prefix="/api")
-app.include_router(analytics_router, prefix="/api")
-app.include_router(auth_router, prefix="/api")
-app.include_router(public_router, prefix="/api")
-app.include_router(subscriptions_router, prefix="/api")
-app.include_router(moderation.router, prefix="/api")
-app.include_router(favorites.router, prefix="/api")
-app.include_router(complaints.router, prefix="/api")
+for router in routers:
+    app.include_router(router, prefix="/api")
+
 
 @app.get("/")
 async def root():
-    return {"message": "Недвижимость API", "docs": "/docs"}
+    return {
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "docs": "/docs",
+        "redoc": "/redoc"
+    }
+
+
+@app.on_event("startup")
+async def startup():
+    logger.info("Creating database tables...")
+    Base.metadata.create_all(bind=engine)
+    logger.info(f"{settings.APP_NAME} v{settings.APP_VERSION} started")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    logger.info("Application shutting down")

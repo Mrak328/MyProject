@@ -557,3 +557,189 @@
 .modal-buttons button:last-child:hover {
     background: #c0392b;
 }
+/* ListingDetail.css — дополнить */
+
+/* Отзывы */
+.reviews-section {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.reviews-section h2 {
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+.review-form {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.review-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.review-form button {
+    align-self: flex-end;
+    padding: 10px 24px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.review-form button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.review-card {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.review-header strong {
+    font-size: 16px;
+}
+
+.review-date {
+    color: #999;
+    font-size: 13px;
+}
+
+.review-content {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #444;
+}
+
+/* Комментарии */
+.comments-list {
+    margin-top: 12px;
+    padding-left: 20px;
+    border-left: 2px solid #e0e0e0;
+}
+
+.comment-item {
+    padding: 6px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.comment-item strong {
+    color: #333;
+}
+
+.comment-date {
+    margin-left: 8px;
+    color: #bbb;
+    font-size: 12px;
+}
+
+.comment-form {
+    margin-top: 8px;
+}
+
+.comment-form input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.no-data {
+    color: #999;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Модалка */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 450px;
+    width: 90%;
+}
+
+.modal-content h3 {
+    margin: 0 0 16px 0;
+    font-size: 20px;
+}
+
+.modal-content select,
+.modal-content textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    margin-bottom: 12px;
+    font-family: inherit;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+}
+
+.modal-buttons button[type="button"] {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-buttons button[type="submit"] {
+    background: #e74c3c;
+    color: white;
+}
+
+.modal-error {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
