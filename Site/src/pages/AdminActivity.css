@@ -1,0 +1,106 @@
+.admin-activity-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.admin-activity-page h1 {
+    margin-bottom: 24px;
+    font-size: 28px;
+}
+
+.activity-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.btn-refresh {
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-refresh:hover {
+    background: #3d5068;
+}
+
+.activity-search {
+    display: flex;
+    gap: 8px;
+}
+
+.activity-search input {
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 180px;
+}
+
+.activity-search input:focus {
+    outline: none;
+    border-color: #2c3e50;
+}
+
+.activity-search button {
+    padding: 10px 20px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.activity-search button:hover {
+    background: #219a52;
+}
+
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.logs-table th,
+.logs-table td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.logs-table th {
+    background: #2c3e50;
+    color: white;
+    font-weight: 600;
+}
+
+.logs-table tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+.logs-table tr:hover {
+    background: #f0f4f8;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 40px;
+    font-size: 16px;
+}

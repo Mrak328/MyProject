@@ -1,0 +1,112 @@
+.admin-search-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.admin-search-page h1 {
+    margin-bottom: 24px;
+    font-size: 28px;
+}
+
+.analytics-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.analytics-card h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+}
+
+.queries-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.query-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f9f9f9;
+    border-radius: 10px;
+}
+
+.rank {
+    width: 28px;
+    height: 28px;
+    background: #2c3e50;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.query {
+    flex: 1;
+    font-size: 15px;
+    color: #333;
+}
+
+.count {
+    font-size: 14px;
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+}
+/* Кнопка раскрытия */
+.toggle-block-btn {
+    width: 100%;
+    padding: 14px 16px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.toggle-block-btn:hover {
+    background: #3d5068;
+}
+
+.toggle-block-btn .arrow {
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.toggle-block-btn .arrow.open {
+    transform: rotate(180deg);
+}
+
+/* Выдвижной контент */
+.block-wrapper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, margin-top 0.3s ease;
+}
+
+.block-wrapper.open {
+    max-height: 500px;
+    margin-top: 12px;
+    overflow-y: auto;
+}
