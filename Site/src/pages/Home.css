@@ -1,59 +1,87 @@
-.results-info {
-    margin: 20px 0;
-    padding: 0;
-    font-size: 14px;
-    color: #666;
-}
-
-.loader {
-    text-align: center;
-    padding: 40px;
-    font-size: 16px;
-    color: #666;
-}
-
-.error {
-    text-align: center;
-    padding: 20px;
-    color: #e74c3c;
-    background: #fee2e2;
-    border-radius: 12px;
-    margin-bottom: 20px;
-}
-
-.no-results {
-    text-align: center;
-    padding: 60px;
+/* Home.css — обновить sort-container */
+.sort-container {
     background: white;
     border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.load-more {
-    text-align: center;
-    margin: 30px 0;
+.sort-bar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.load-more button {
-    padding: 12px 32px;
+/* Кнопка Сортировка — такой же стиль как Фильтры */
+.toggle-sort-btn {
+    padding: 12px 16px;
     background: #2c3e50;
     color: white;
     border: none;
-    border-radius: 40px;
+    border-radius: 10px;
+    font-size: 14px;
     cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.load-more button:disabled {
-    background: #95a5a6;
+.toggle-sort-btn:hover {
+    background: #3d5068;
 }
 
-.listings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+.toggle-sort-btn .arrow {
+    font-size: 10px;
+    transition: transform 0.2s;
 }
 
-@media (max-width: 768px) {
-    .listings-grid {
-        grid-template-columns: 1fr;
-    }
+.toggle-sort-btn.open .arrow {
+    transform: rotate(180deg);
+}
+
+.sort-count {
+    font-size: 14px;
+    color: #666;
+    margin-left: auto;
+}
+
+.sort-wrapper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, margin-top 0.3s ease;
+}
+
+.sort-wrapper.open {
+    max-height: 80px;
+    margin-top: 12px;
+}
+
+.sort-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sort-row button {
+    padding: 10px 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sort-row button:hover {
+    border-color: #2c3e50;
+}
+
+.sort-row button.active {
+    background: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
 }

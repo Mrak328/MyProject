@@ -13,12 +13,12 @@ const RENOVATION_CONDITIONS = [
 ];
 
 const INITIAL_FILTERS = {
-    query: '', city: 'Киров', minPrice: '', maxPrice: '', minArea: '', maxArea: '',
+    query: '', minPrice: '', maxPrice: '', minArea: '', maxArea: '',
     rooms: null, floor: '', dealTypeId: '', propertyTypeId: '', renovationId: '',
     sortBy: 'date_desc', city_id: '', region_id: '', country_id: ''
 };
 
-function SearchForm({ filters, onFilterChange }) {
+function SearchForm({ filters, onFilterChange, onSearch }) {
     const [localFilters, setLocalFilters] = useState({ ...INITIAL_FILTERS, ...filters });
     const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -27,9 +27,7 @@ function SearchForm({ filters, onFilterChange }) {
     }, [filters]);
 
     const updateFilter = (name, value) => {
-        const updated = { ...localFilters, [name]: value };
-        setLocalFilters(updated);
-        onFilterChange(updated);
+        setLocalFilters(prev => ({ ...prev, [name]: value }));
     };
 
     const handleChange = (e) => {
@@ -47,9 +45,19 @@ function SearchForm({ filters, onFilterChange }) {
     };
 
     const handleAddressChange = (address) => {
-        const updated = { ...localFilters, ...address };
-        setLocalFilters(updated);
-        onFilterChange(updated);
+        setLocalFilters(prev => ({ ...prev, ...address }));
+    };
+
+    const handleSearch = () => {
+        const clean = {
+            ...localFilters,
+            propertyTypeId: localFilters.propertyTypeId ? Number(localFilters.propertyTypeId) : '',
+            dealTypeId: localFilters.dealTypeId ? Number(localFilters.dealTypeId) : '',
+            renovationId: localFilters.renovationId ? Number(localFilters.renovationId) : '',
+            rooms: localFilters.rooms ? Number(localFilters.rooms) : null,
+        };
+        onFilterChange(clean);
+        onSearch?.(clean);
     };
 
     const handleReset = () => {
@@ -60,29 +68,25 @@ function SearchForm({ filters, onFilterChange }) {
     return (
         <div className="search-container">
             <div className="search-bar">
-                <input type="text" name="query" placeholder="Поиск по заголовку или описанию" value={localFilters.query} onChange={handleChange} className="search-input" />
-                <button type="button" className={`toggle-filters-btn ${filtersOpen ? 'open' : ''}`} onClick={() => setFiltersOpen(!filtersOpen)}>
-                    Фильтры <span className="arrow">▼</span>
-                </button>
+                <input type="text" name="query" placeholder="Поиск по заголовку" value={localFilters.query} onChange={handleChange} onKeyDown={e => e.key === 'Enter' && handleSearch()} className="search-input" />
+                <div className="search-actions">
+                    <button type="button" className="search-btn" onClick={handleSearch}>🔍 Найти</button>
+                    <button type="button" className={`toggle-filters-btn ${filtersOpen ? 'open' : ''}`} onClick={() => setFiltersOpen(!filtersOpen)}>
+                        Фильтры <span className="arrow">▼</span>
+                    </button>
+                </div>
             </div>
 
             <div className={`filters-wrapper ${filtersOpen ? 'open' : ''}`}>
                 <div className="filters-row">
                     <AddressSelect onChange={handleAddressChange} />
 
-                    <select value={localFilters.sortBy} onChange={handleChange} name="sortBy" className="filter-select">
-                        <option value="date_desc">📅 Сначала новые</option>
-                        <option value="price_asc">💰 Сначала дешевле</option>
-                        <option value="price_desc">💰 Сначала дороже</option>
-                        <option value="views_desc">👁 Популярные</option>
-                    </select>
-
                     <select value={localFilters.rooms || ''} onChange={(e) => handleRoomsChange(e.target.value ? Number(e.target.value) : null)} className="filter-select">
-                        <option value="">Все комнаты</option>
-                        <option value="1">1 комната</option>
-                        <option value="2">2 комнаты</option>
-                        <option value="3">3 комнаты</option>
-                        <option value="4">4+ комнат</option>
+                        <option value="">Комнаты</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4+</option>
                     </select>
 
                     <input type="number" name="minPrice" placeholder="Цена от" value={localFilters.minPrice} onChange={handleNumberChange} className="filter-input" />
@@ -98,7 +102,7 @@ function SearchForm({ filters, onFilterChange }) {
                     </select>
 
                     <select name="propertyTypeId" value={localFilters.propertyTypeId} onChange={handleChange} className="filter-select">
-                        <option value="">Тип недвижимости</option>
+                        <option value="">Тип</option>
                         {PROPERTY_TYPES.map((t) => (<option key={t.id} value={t.id}>{t.label}</option>))}
                     </select>
 
@@ -107,7 +111,7 @@ function SearchForm({ filters, onFilterChange }) {
                         {RENOVATION_CONDITIONS.map((r) => (<option key={r.id} value={r.id}>{r.label}</option>))}
                     </select>
 
-                    <button className="reset-btn" onClick={handleReset} type="button" title="Сбросить фильтры">✖</button>
+                    <button className="reset-btn" onClick={handleReset} type="button" title="Сбросить">✖</button>
                 </div>
             </div>
         </div>

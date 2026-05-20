@@ -17,8 +17,6 @@ function ListingDetail() {
     const [error, setError] = useState(null);
     const [selectedPhoto, setSelectedPhoto] = useState(0);
     const [showReportModal, setShowReportModal] = useState(false);
-
-    // Отзывы и комментарии
     const [reviews, setReviews] = useState([]);
     const [comments, setComments] = useState({});
     const [newReview, setNewReview] = useState('');
@@ -46,7 +44,6 @@ function ListingDetail() {
         try {
             const res = await API.get(`/reviews/listing/${id}`);
             setReviews(res.data || []);
-            // Загрузить комментарии для всех отзывов
             res.data?.forEach(r => loadComments(r.review_id));
         } catch {}
     };
@@ -113,7 +110,6 @@ function ListingDetail() {
 
     return (
         <div className="listing-detail">
-            {/* Хлебные крошки */}
             <div className="breadcrumbs">
                 <Link to="/">Главная</Link> / <Link to="/listings">Объявления</Link> / <span>{listing.title}</span>
             </div>
@@ -121,16 +117,9 @@ function ListingDetail() {
             <h1 className="detail-title">{listing.title}</h1>
 
             <div className="detail-content">
-                {/* Левая колонка — фото и описание */}
                 <div className="detail-left">
                     <div className="main-photo-container">
-                        <img
-                            src={currentPhoto}
-                            alt={listing.title}
-                            className="main-photo"
-                            onError={(e) => { e.target.src = PLACEHOLDER; }}
-                        />
-
+                        <img src={currentPhoto} alt={listing.title} className="main-photo" onError={(e) => { e.target.src = PLACEHOLDER; }} />
                         {photos.length > 1 && (
                             <>
                                 <button className="main-photo-nav prev" onClick={() => changePhoto(-1)}>‹</button>
@@ -143,16 +132,8 @@ function ListingDetail() {
                     {photos.length > 1 && (
                         <div className="photo-thumbnails">
                             {photos.map((photo, index) => (
-                                <div
-                                    key={index}
-                                    className={`thumbnail ${selectedPhoto === index ? 'active' : ''}`}
-                                    onClick={() => setSelectedPhoto(index)}
-                                >
-                                    <img
-                                        src={photo.file_url || photo}
-                                        alt={`Фото ${index + 1}`}
-                                        onError={(e) => { e.target.src = PLACEHOLDER; }}
-                                    />
+                                <div key={index} className={`thumbnail ${selectedPhoto === index ? 'active' : ''}`} onClick={() => setSelectedPhoto(index)}>
+                                    <img src={photo.file_url || photo} alt={`Фото ${index + 1}`} onError={(e) => { e.target.src = PLACEHOLDER; }} />
                                 </div>
                             ))}
                         </div>
@@ -166,7 +147,6 @@ function ListingDetail() {
                     )}
                 </div>
 
-                {/* Правая колонка — информация */}
                 <div className="detail-right">
                     <div className="price-section">
                         <div className="price">{formatPrice(listing.price)}</div>
@@ -191,9 +171,7 @@ function ListingDetail() {
                             {listing.floor && (
                                 <div className="feature-item">
                                     <span className="feature-label">Этаж</span>
-                                    <span className="feature-value">
-                                        {listing.floor}{listing.max_floor ? ` / ${listing.max_floor}` : ''}
-                                    </span>
+                                    <span className="feature-value">{listing.floor}{listing.max_floor ? ` / ${listing.max_floor}` : ''}</span>
                                 </div>
                             )}
                             {listing.address && (
@@ -219,12 +197,9 @@ function ListingDetail() {
                         </div>
                     </div>
 
-                    {/* Избранное и жалоба */}
                     <div className="action-buttons">
                         <FavoriteButton listingId={Number(id)} />
-                        <button onClick={() => setShowReportModal(true)} className="report-btn">
-                            🚨 Пожаловаться
-                        </button>
+                        <button onClick={() => setShowReportModal(true)} className="report-btn">🚨 Пожаловаться</button>
                     </div>
 
                     {/* Контакты */}
@@ -246,6 +221,15 @@ function ListingDetail() {
                         ) : (
                             <p className="no-contacts">Контакты не указаны</p>
                         )}
+
+                        {listing.user_id && (
+                            <div className="contact-item profile-link-row">
+                                <span className="contact-icon">👤</span>
+                                <Link to={`/user/${listing.user_id}`} className="profile-link">
+                                    Профиль продавца
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -256,16 +240,8 @@ function ListingDetail() {
 
                 {isAuthenticated && (
                     <div className="review-form">
-                        <textarea
-                            placeholder="Напишите отзыв..."
-                            value={newReview}
-                            onChange={(e) => setNewReview(e.target.value)}
-                            rows="3"
-                            maxLength={1000}
-                        />
-                        <button onClick={submitReview} disabled={!newReview.trim()}>
-                            Оставить отзыв
-                        </button>
+                        <textarea placeholder="Напишите отзыв..." value={newReview} onChange={(e) => setNewReview(e.target.value)} rows="3" maxLength={1000} />
+                        <button onClick={submitReview} disabled={!newReview.trim()}>Оставить отзыв</button>
                     </div>
                 )}
 
@@ -281,7 +257,6 @@ function ListingDetail() {
                         </div>
                         <p className="review-content">{review.content}</p>
 
-                        {/* Комментарии к отзыву */}
                         {comments[review.review_id]?.length > 0 && (
                             <div className="comments-list">
                                 {comments[review.review_id].map((c) => (
@@ -293,7 +268,6 @@ function ListingDetail() {
                             </div>
                         )}
 
-                        {/* Форма комментария */}
                         {isAuthenticated && (
                             <div className="comment-form">
                                 <input
@@ -301,9 +275,7 @@ function ListingDetail() {
                                     value={commentInputs[review.review_id] || ''}
                                     onChange={(e) => setCommentInputs(prev => ({ ...prev, [review.review_id]: e.target.value }))}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            submitComment(review.review_id, e.target.value);
-                                        }
+                                        if (e.key === 'Enter') submitComment(review.review_id, e.target.value);
                                     }}
                                 />
                             </div>
@@ -312,12 +284,8 @@ function ListingDetail() {
                 ))}
             </div>
 
-            {/* Модалка жалобы */}
             {showReportModal && (
-                <ReportModal
-                    listingId={Number(id)}
-                    onClose={() => setShowReportModal(false)}
-                />
+                <ReportModal listingId={Number(id)} onClose={() => setShowReportModal(false)} />
             )}
         </div>
     );

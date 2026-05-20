@@ -4,7 +4,6 @@ export const searchListings = (filters = {}, page = 1, pageSize = 20) => {
     const params = { page, page_size: pageSize };
 
     if (filters.query) params.query = filters.query;
-    if (filters.city) params.city = filters.city;
     if (filters.minPrice) params.min_price = filters.minPrice;
     if (filters.maxPrice) params.max_price = filters.maxPrice;
     if (filters.minArea) params.min_area = filters.minArea;
@@ -14,7 +13,9 @@ export const searchListings = (filters = {}, page = 1, pageSize = 20) => {
     if (filters.propertyTypeId) params.property_type_id = filters.propertyTypeId;
     if (filters.dealTypeId) params.deal_type_id = filters.dealTypeId;
     if (filters.renovationId) params.renovation_condition_id = filters.renovationId;
+    if (filters.marketTypeId) params.market_type_id = filters.marketTypeId;
     if (filters.sortBy) params.sort_by = filters.sortBy;
+    if (filters.city_id) params.city_id = filters.city_id;
 
     return API.get('/listings/search', { params })
         .then(r => r.data)

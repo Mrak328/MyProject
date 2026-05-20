@@ -1,28 +1,24 @@
-/* Контейнер */
+/* SearchForm.css — полностью */
 .search-container {
     background: white;
     border-radius: 16px;
     padding: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Поисковая строка */
 .search-bar {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
     align-items: center;
 }
 
 .search-input {
     flex: 1;
-    min-width: 180px;
     padding: 12px 16px;
     border: 1px solid #e0e0e0;
     border-radius: 10px;
     font-size: 15px;
-    transition: border-color 0.2s;
 }
 
 .search-input:focus {
@@ -30,26 +26,46 @@
     border-color: #2c3e50;
 }
 
-/* Кнопка раскрытия фильтров */
+.search-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Кнопка Найти */
+.search-btn {
+    padding: 12px 24px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.search-btn:hover {
+    background: #219a52;
+}
+
+/* Кнопка Фильтры */
 .toggle-filters-btn {
+    padding: 12px 16px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 12px 20px;
-    border: 1px solid #2c3e50;
-    border-radius: 10px;
-    font-size: 14px;
-    background: #2c3e50;
-    color: white;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s;
-    flex-shrink: 0;
 }
 
 .toggle-filters-btn:hover {
     background: #3d5068;
-    border-color: #3d5068;
 }
 
 .toggle-filters-btn .arrow {
@@ -61,7 +77,7 @@
     transform: rotate(180deg);
 }
 
-/* Обёртка фильтров */
+/* Выдвижные фильтры */
 .filters-wrapper {
     max-height: 0;
     overflow: hidden;
@@ -74,15 +90,14 @@
     overflow-y: auto;
 }
 
-/* Строка фильтров */
 .filters-row {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    align-items: flex-start;
+    align-items: center;
 }
 
-/* Селекты географии */
+/* Гео-селекты */
 .address-select {
     display: flex;
     flex-wrap: wrap;
@@ -98,12 +113,8 @@
     border-radius: 10px;
     font-size: 14px;
     background: white;
+    color: #333;
     cursor: pointer;
-}
-
-.address-select select:focus {
-    outline: none;
-    border-color: #2c3e50;
 }
 
 .address-select select:disabled {
@@ -112,16 +123,17 @@
     cursor: not-allowed;
 }
 
-/* Остальные фильтры */
+/* Селекты фильтров */
 .filter-select {
-    flex: 1;
-    min-width: 140px;
     padding: 10px 12px;
     border: 1px solid #e0e0e0;
     border-radius: 10px;
     font-size: 14px;
     background: white;
+    color: #333;
     cursor: pointer;
+    min-width: 120px;
+    flex: 1;
 }
 
 .filter-select:focus {
@@ -129,29 +141,20 @@
     border-color: #2c3e50;
 }
 
+/* Инпуты фильтров */
 .filter-input {
-    flex: 1;
-    min-width: 120px;
     padding: 10px 12px;
     border: 1px solid #e0e0e0;
     border-radius: 10px;
     font-size: 14px;
+    color: #333;
+    min-width: 100px;
+    flex: 1;
 }
 
 .filter-input:focus {
     outline: none;
     border-color: #2c3e50;
-}
-
-/* Скрываем стрелки у number-полей */
-.filter-input[type="number"]::-webkit-inner-spin-button,
-.filter-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.filter-input[type="number"] {
-    -moz-appearance: textfield;
 }
 
 /* Кнопка сброса */
@@ -166,7 +169,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
+    color: #333;
     flex-shrink: 0;
 }
 
@@ -181,20 +184,23 @@
         flex-direction: column;
     }
 
-    .toggle-filters-btn {
+    .search-actions {
         width: 100%;
+    }
+
+    .search-btn,
+    .toggle-filters-btn {
+        flex: 1;
         justify-content: center;
     }
 
-    .filters-wrapper.open {
-        max-height: 800px;
+    .filters-row {
+        flex-direction: column;
     }
 
-    .address-select select,
     .filter-select,
     .filter-input {
         width: 100%;
-        flex: auto;
     }
 
     .reset-btn {

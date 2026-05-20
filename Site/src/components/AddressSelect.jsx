@@ -9,62 +9,55 @@ function AddressSelect({ onChange }) {
     const [streets, setStreets] = useState([]);
     const [houses, setHouses] = useState([]);
 
-    const [countryId, setCountryId] = useState('1');       // Россия по умолчанию
-    const [regionId, setRegionId] = useState('');          // Кировская область
-    const [cityId, setCityId] = useState('');              // Киров
+    const [countryId, setCountryId] = useState('1');
+    const [regionId, setRegionId] = useState('');
+    const [cityId, setCityId] = useState('');
     const [districtId, setDistrictId] = useState('');
     const [streetId, setStreetId] = useState('');
     const [houseId, setHouseId] = useState('');
 
-    // Загрузка стран и регионов России при монтировании
     useEffect(() => {
-        getCountries().then(data => {
-            setCountries(data);
-        });
+        getCountries().then(setCountries);
         getRegions(1).then(data => {
             setRegions(data);
-            // Найти Кировскую область
-            const kirovRegion = data.find(r => r.name === 'Кировская область');
-            if (kirovRegion) {
-                setRegionId(String(kirovRegion.id));
-            }
+            const kirov = data.find(r => r.name === 'Кировская область');
+            if (kirov) setRegionId(String(kirov.id));
         });
     }, []);
 
-    // После установки региона — загрузить города
     useEffect(() => {
         if (regionId) {
             getCities(regionId).then(data => {
                 setCities(data);
-                // Найти Киров
                 const kirovCity = data.find(c => c.name === 'Киров');
-                if (kirovCity) {
-                    setCityId(String(kirovCity.id));
-                }
+                if (kirovCity) setCityId(String(kirovCity.id));
             });
             setDistricts([]);
             setStreets([]);
             setHouses([]);
+            setDistrictId('');
+            setStreetId('');
+            setHouseId('');
         }
     }, [regionId]);
 
-    // После установки города — районы и улицы
     useEffect(() => {
         if (cityId) {
             getDistricts(cityId).then(setDistricts);
             getStreets(cityId).then(setStreets);
             setHouses([]);
+            setStreetId('');
+            setHouseId('');
         }
     }, [cityId]);
 
-    // После установки улицы — дома
     useEffect(() => {
         if (streetId) {
             getHouses(streetId).then(setHouses);
+            setHouseId('');
         }
     }, [streetId]);
 
-    // Передать выбранный адрес родителю
     useEffect(() => {
         onChange?.({
             country_id: countryId || null,
@@ -78,31 +71,26 @@ function AddressSelect({ onChange }) {
 
     return (
         <div className="address-select">
-            <select value={countryId} onChange={(e) => { setCountryId(e.target.value); setRegionId(''); }}>
+            <select value={countryId} onChange={(e) => setCountryId(e.target.value)}>
                 <option value="">Страна</option>
                 {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-
-            <select value={regionId} onChange={(e) => { setRegionId(e.target.value); setCityId(''); }} disabled={!countryId}>
+            <select value={regionId} onChange={(e) => setRegionId(e.target.value)} disabled={!countryId}>
                 <option value="">Регион</option>
                 {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
-
-            <select value={cityId} onChange={(e) => { setCityId(e.target.value); setDistrictId(''); }} disabled={!regionId}>
+            <select value={cityId} onChange={(e) => setCityId(e.target.value)} disabled={!regionId}>
                 <option value="">Город</option>
                 {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-
             <select value={districtId} onChange={(e) => setDistrictId(e.target.value)} disabled={!cityId}>
                 <option value="">Район</option>
                 {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-
-            <select value={streetId} onChange={(e) => { setStreetId(e.target.value); setHouseId(''); }} disabled={!cityId}>
+            <select value={streetId} onChange={(e) => setStreetId(e.target.value)} disabled={!cityId}>
                 <option value="">Улица</option>
                 {streets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-
             <select value={houseId} onChange={(e) => setHouseId(e.target.value)} disabled={!streetId}>
                 <option value="">Дом</option>
                 {houses.map(h => <option key={h.id} value={h.id}>{h.number}</option>)}

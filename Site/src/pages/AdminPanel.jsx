@@ -9,9 +9,7 @@ function AdminPanel() {
     const [stats, setStats] = useState(null);
 
     useEffect(() => {
-        API.get('/admin/stats')
-            .then((res) => setStats(res.data))
-            .catch(() => {});
+        API.get('/admin/stats').then(res => setStats(res.data)).catch(() => {});
     }, []);
 
     return (
@@ -19,7 +17,6 @@ function AdminPanel() {
             <h1>Панель администратора</h1>
             <p>Добро пожаловать, {user?.first_name || 'Админ'}!</p>
 
-            {/* Быстрые метрики */}
             {stats && (
                 <div className="admin-stats">
                     <div className="admin-stat">
@@ -31,12 +28,8 @@ function AdminPanel() {
                         <span className="admin-stat-label">Объявлений</span>
                     </div>
                     <div className="admin-stat">
-                        <span className="admin-stat-value">{stats.pending_listings}</span>
-                        <span className="admin-stat-label">На модерации</span>
-                    </div>
-                    <div className="admin-stat">
-                        <span className="admin-stat-value">{stats.pending_complaints}</span>
-                        <span className="admin-stat-label">Жалоб</span>
+                        <span className="admin-stat-value">{stats.active_blocks || 0}</span>
+                        <span className="admin-stat-label">Блокировок</span>
                     </div>
                 </div>
             )}
@@ -52,15 +45,15 @@ function AdminPanel() {
                     <p>Список, роли, блокировки</p>
                 </Link>
 
-                <Link to="/admin/listings" className="admin-card">
-                    <h3>📋 Модерация объявлений</h3>
-                    <p>Проверка и одобрение</p>
+                <Link to="/admin/activity" className="admin-card">
+                    <h3>📋 История действий</h3>
+                    <p>Логи действий пользователей</p>
                 </Link>
 
-                <Link to="/admin/complaints" className="admin-card">
-                    <h3>🚨 Жалобы</h3>
-                    <p>Обработка жалоб пользователей</p>
-                </Link>
+                <Link to="/admin/search" className="admin-card">
+                    <h3>🔍 Поисковые запросы</h3>
+                    <p>Что ищут пользователи</p>
+                 </Link>
             </div>
         </div>
     );

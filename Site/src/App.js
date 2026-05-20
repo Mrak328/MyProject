@@ -12,8 +12,12 @@ import CreateListing from './pages/CreateListing';
 import UserProfile from './pages/UserProfile';
 import AdminPanel from './pages/AdminPanel';
 import AdminAnalytics from './pages/AdminAnalytics';
+import AdminUsers from './pages/AdminUsers';
+import AdminActivity from './pages/AdminActivity';
 import Moderation from './pages/Moderation';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminSearch from './pages/AdminSearch';
+import Chats from './pages/Chats';
 
 function App() {
     return (
@@ -28,26 +32,20 @@ function App() {
                                 <Route path="/listing/:id" element={<ListingDetail />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/register" element={<Register />} />
-                                <Route path="/favorites" element={
-                                    <ProtectedRoute><Favorites /></ProtectedRoute>
-                                } />
-                                <Route path="/create-listing" element={
-                                    <ProtectedRoute><CreateListing /></ProtectedRoute>
-                                } />
+                                <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+                                <Route path="/create-listing" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
                                 <Route path="/user/:id" element={<UserProfile />} />
+                                <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
 
                                 {/* Админ */}
-                                <Route path="/admin" element={
-                                    <ProtectedRoute roles={[1]}><AdminPanel /></ProtectedRoute>
-                                } />
-                                <Route path="/admin/analytics" element={
-                                    <ProtectedRoute roles={[1]}><AdminAnalytics /></ProtectedRoute>
-                                } />
+                                <Route path="/admin" element={<ProtectedRoute roles={[1]}><AdminPanel /></ProtectedRoute>} />
+                                <Route path="/admin/analytics" element={<ProtectedRoute roles={[1]}><AdminAnalytics /></ProtectedRoute>} />
+                                <Route path="/admin/users" element={<ProtectedRoute roles={[1]}><AdminUsers /></ProtectedRoute>} />
+                                <Route path="/admin/activity" element={<ProtectedRoute roles={[1]}><AdminActivity /></ProtectedRoute>} />
+                                <Route path="/admin/search" element={<ProtectedRoute roles={[1]}><AdminSearch /></ProtectedRoute>} />
 
                                 {/* Модерация */}
-                                <Route path="/moderation" element={
-                                    <ProtectedRoute roles={[1, 2]}><Moderation /></ProtectedRoute>
-                                } />
+                                <Route path="/moderation" element={<ProtectedRoute roles={[1, 2]}><Moderation /></ProtectedRoute>} />
                             </Routes>
                         </main>
                         <Footer />

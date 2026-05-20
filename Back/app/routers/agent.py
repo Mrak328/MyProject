@@ -61,3 +61,10 @@ async def update_my_agent_profile(
         raise HTTPException(status_code=404, detail="Профиль агента не найден")
 
     return agent_crud.update(db, agent, data)
+
+@router.get("/by-user/{user_id}")
+async def get_agent_by_user(user_id: int, db: Session = Depends(get_db)):
+    agent = agent_crud.get_by_user(db, user_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Агент не найден")
+    return agent

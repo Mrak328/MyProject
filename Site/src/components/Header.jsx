@@ -23,6 +23,7 @@ function Header() {
                     <Link to="/">Главная</Link>
                     {isAuthenticated && <Link to="/favorites">Избранное</Link>}
                     {isAuthenticated && <Link to="/create-listing">+ Разместить</Link>}
+                    {isAuthenticated && <Link to="/chats">Чат</Link>}
                     {(isAdmin || isModerator) && <Link to="/moderation">Модерация</Link>}
                     {isAdmin && <Link to="/admin">Админ</Link>}
                 </nav>

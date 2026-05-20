@@ -45,16 +45,14 @@ function AdminAnalytics() {
             setViewsStats(viewsRes.data || INITIAL_VIEWS_STATS);
             setPriceStats(priceRes.data || INITIAL_PRICE_STATS);
             setClosedDeals(closedRes.data || INITIAL_CLOSED_DEALS);
-        } catch (err) {
+        } catch {
             setError('Не удалось загрузить аналитику');
         } finally {
             setLoading(false);
         }
     }, [period]);
 
-    useEffect(() => {
-        loadAllAnalytics();
-    }, [loadAllAnalytics]);
+    useEffect(() => { loadAllAnalytics(); }, [loadAllAnalytics]);
 
     const formatNumber = (num) => (num ?? 0).toLocaleString('ru-RU');
 
@@ -65,36 +63,21 @@ function AdminAnalytics() {
         <div className="analytics-page">
             <h1>Аналитика</h1>
 
+            {/* Период */}
             <div className="period-selector">
                 {PERIOD_OPTIONS.map((opt) => (
-                    <button
-                        key={opt.value}
-                        className={period === opt.value ? 'active' : ''}
-                        onClick={() => setPeriod(opt.value)}
-                    >
+                    <button key={opt.value} className={period === opt.value ? 'active' : ''} onClick={() => setPeriod(opt.value)}>
                         {opt.label}
                     </button>
                 ))}
             </div>
 
-            {/* Метрики */}
+            {/* Дашборд */}
             <div className="metrics-grid">
-                <div className="metric-card">
-                    <h3>Всего объявлений</h3>
-                    <p className="metric-value">{dashboard.total_listings}</p>
-                </div>
-                <div className="metric-card">
-                    <h3>Активных сегодня</h3>
-                    <p className="metric-value">{dashboard.active_today}</p>
-                </div>
-                <div className="metric-card">
-                    <h3>Просмотров сегодня</h3>
-                    <p className="metric-value">{dashboard.views_today}</p>
-                </div>
-                <div className="metric-card">
-                    <h3>Новых сегодня</h3>
-                    <p className="metric-value">{dashboard.new_listings_today}</p>
-                </div>
+                <div className="metric-card"><h3>Всего объявлений</h3><p className="metric-value">{dashboard.total_listings}</p></div>
+                <div className="metric-card"><h3>Активных сегодня</h3><p className="metric-value">{dashboard.active_today}</p></div>
+                <div className="metric-card"><h3>Просмотров сегодня</h3><p className="metric-value">{dashboard.views_today}</p></div>
+                <div className="metric-card"><h3>Новых сегодня</h3><p className="metric-value">{dashboard.new_listings_today}</p></div>
             </div>
 
             {/* Просмотры */}
@@ -102,15 +85,15 @@ function AdminAnalytics() {
                 <h2>Статистика просмотров</h2>
                 <div className="stats-grid">
                     <div className="stat-item highlight">
-                        <span className="stat-label">Всего просмотров:</span>
+                        <span className="stat-label">Всего просмотров</span>
                         <span className="stat-value large">{formatNumber(viewsStats.total_views)}</span>
                     </div>
                     <div className="stat-item">
-                        <span className="stat-label">Уникальных объявлений:</span>
+                        <span className="stat-label">Уникальных объявлений</span>
                         <span className="stat-value">{viewsStats.unique_listings}</span>
                     </div>
                     <div className="stat-item">
-                        <span className="stat-label">Уникальных посетителей:</span>
+                        <span className="stat-label">Уникальных посетителей</span>
                         <span className="stat-value">{viewsStats.unique_visitors}</span>
                     </div>
                 </div>
@@ -131,50 +114,47 @@ function AdminAnalytics() {
                 <h2>Статистика цен</h2>
                 <div className="stats-grid">
                     <div className="stat-item highlight">
-                        <span className="stat-label">Всего активных:</span>
+                        <span className="stat-label">Всего активных</span>
                         <span className="stat-value large">{priceStats.total_active}</span>
                     </div>
                     <div className="stat-item highlight">
-                        <span className="stat-label">Средняя цена:</span>
+                        <span className="stat-label">Средняя цена</span>
                         <span className="stat-value large">{formatNumber(priceStats.avg_price)} ₽</span>
                     </div>
                     <div className="stat-item highlight">
-                        <span className="stat-label">Цена за м²:</span>
+                        <span className="stat-label">Цена за м²</span>
                         <span className="stat-value large">{formatNumber(priceStats.avg_price_per_m2)} ₽</span>
                     </div>
                 </div>
                 <div className="stats-mini-grid">
                     <div className="stat-mini-item">
-                        <span className="stat-mini-label">Мин:</span>
+                        <span className="stat-mini-label">Минимальная цена</span>
                         <span className="stat-mini-value">{formatNumber(priceStats.min_price)} ₽</span>
                     </div>
                     <div className="stat-mini-item">
-                        <span className="stat-mini-label">Макс:</span>
+                        <span className="stat-mini-label">Максимальная цена</span>
                         <span className="stat-mini-value">{formatNumber(priceStats.max_price)} ₽</span>
                     </div>
                 </div>
                 {priceStats.price_ranges && Object.keys(priceStats.price_ranges).length > 0 && (
-                    <div className="price-ranges">
-                        {Object.entries(priceStats.price_ranges).map(([range, count]) => (
-                            <div key={range} className="price-range-item">
-                                <span className="range-label">{range}:</span>
-                                <span className="range-count">{count}</span>
-                                <span className="range-percent">
-                                    ({priceStats.total_active ? ((count / priceStats.total_active) * 100).toFixed(1) : 0}%)
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+                    <>
+                        <h3>Распределение по ценам</h3>
+                        <div className="price-ranges">
+                            {Object.entries(priceStats.price_ranges).map(([range, count]) => (
+                                <div key={range} className="price-range-item">
+                                    <span className="range-label">{range}</span>
+                                    <span className="range-count">{count}</span>
+                                    <span className="range-percent">
+                                        ({priceStats.total_active ? ((count / priceStats.total_active) * 100).toFixed(1) : 0}%)
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 )}
                 {priceStats.by_type?.length > 0 && (
                     <table className="stats-table">
-                        <thead>
-                            <tr>
-                                <th>Тип</th>
-                                <th>Кол-во</th>
-                                <th>Средняя цена</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Тип</th><th>Кол-во</th><th>Средняя цена</th></tr></thead>
                         <tbody>
                             {priceStats.by_type.map((item, idx) => (
                                 <tr key={idx}>
@@ -194,15 +174,15 @@ function AdminAnalytics() {
                     <h2>Закрытые сделки</h2>
                     <div className="stats-grid">
                         <div className="stat-item highlight">
-                            <span className="stat-label">Продано:</span>
+                            <span className="stat-label">Продано</span>
                             <span className="stat-value large">{closedDeals.total_closed}</span>
                         </div>
                         <div className="stat-item highlight">
-                            <span className="stat-label">Выручка:</span>
+                            <span className="stat-label">Выручка</span>
                             <span className="stat-value large">{formatNumber(closedDeals.total_revenue)} ₽</span>
                         </div>
                         <div className="stat-item highlight">
-                            <span className="stat-label">Среднее время:</span>
+                            <span className="stat-label">Среднее время</span>
                             <span className="stat-value large">{closedDeals.avg_days_to_sell} дн</span>
                         </div>
                     </div>
@@ -210,7 +190,7 @@ function AdminAnalytics() {
             )}
 
             {/* Популярные + Поиск */}
-            <div className="analytics-columns">
+            <div className="analytics-card">
                 <div className="analytics-card">
                     <h2>Популярные объявления</h2>
                     <div className="listings-list">
@@ -226,19 +206,6 @@ function AdminAnalytics() {
                                     <span className="views">👁 {item.views}</span>
                                     <span className="price">{formatNumber(item.price)} ₽</span>
                                 </div>
-                            </div>
-                        )) : <p className="no-data">Нет данных</p>}
-                    </div>
-                </div>
-
-                <div className="analytics-card">
-                    <h2>Поисковые запросы</h2>
-                    <div className="queries-list">
-                        {searchQueries.popular_queries?.length > 0 ? searchQueries.popular_queries.map((item, i) => (
-                            <div key={i} className="query-item">
-                                <span className="rank">{i + 1}</span>
-                                <span className="query">"{item.query || 'пустой запрос'}"</span>
-                                <span className="count">{item.count} раз</span>
                             </div>
                         )) : <p className="no-data">Нет данных</p>}
                     </div>

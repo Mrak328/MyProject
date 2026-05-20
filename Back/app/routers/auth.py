@@ -20,7 +20,6 @@ async def login(request: LoginRequest, req: Request, db: Session = Depends(get_d
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный email/телефон или пароль")
 
     access_token = auth_service.create_access_token(data={"sub": str(user.user_id), "role_id": user.role_id})
-
     action_log_crud.log(db, user.user_id, 10, ip_address=req.client.host, user_agent=req.headers.get("user-agent"))
     user_crud.update_last_activity(db, user.user_id)
 
@@ -44,7 +43,6 @@ async def register(user_data: UserCreate, req: Request, db: Session = Depends(ge
     })
 
     action_log_crud.log(db, new_user.user_id, 9, ip_address=req.client.host, user_agent=req.headers.get("user-agent"))
-
     return new_user
 
 
