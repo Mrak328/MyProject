@@ -3,8 +3,6 @@ from .user import user_crud
 from .listing import listing_crud
 from .photo import photo_crud
 from .favorite import favorite_crud
-from .review import review_crud
-from .review_response import review_response_crud
 from .comment import comment_crud
 from .complaint import complaint_crud
 from .agent import agent_crud

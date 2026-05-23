@@ -21,13 +21,21 @@ async def get_agents(
     return agent_crud.get_active_agents(db, skip, limit)
 
 
-@router.get("/{agent_id}", response_model=AgentProfileResponse)
-async def get_agent(agent_id: int, db: Session = Depends(get_db)):
-    """Профиль агента"""
-    agent = agent_crud.get(db, agent_id)
-    if not agent:
-        raise HTTPException(status_code=404, detail="Агент не найден")
-    return agent
+@router.get("/")
+async def get_agents(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+    agents = db.query(AgentProfile).offset(skip).limit(limit).all()
+    result = []
+    for a in agents:
+        user = db.query(Users).filter(Users.user_id == a.user_id).first()
+        result.append({
+            "agent_id": a.agent_id,
+            "user_id": a.user_id,
+            "company_name": a.company_name,
+            "user_name": user.first_name if user else None,
+            "about": a.about,
+            "created_at": a.created_at
+        })
+    return result
 
 
 @router.post("/", response_model=AgentProfileResponse, status_code=status.HTTP_201_CREATED)

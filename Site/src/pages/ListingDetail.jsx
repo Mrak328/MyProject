@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import FavoriteButton from '../components/FavoriteButton';
@@ -11,6 +11,8 @@ const PLACEHOLDER = 'https://via.placeholder.com/800x600?text=Нет+фото';
 function ListingDetail() {
     const { id } = useParams();
     const { user, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const currentUser = user;
 
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -85,6 +87,17 @@ function ListingDetail() {
             return (prev + delta + listing.photos.length) % listing.photos.length;
         });
     }, [listing]);
+
+
+    const handleWrite = async () => {
+        if (!isAuthenticated) return navigate('/login');
+        try {
+            const res = await API.post('/chats/', { user_id: Number(listing.user_id) });
+            navigate(`/chats?open=${res.data.chat_id}`);
+        } catch {
+            alert('Ошибка при создании чата');
+        }
+    };
 
     const formatPrice = (price) => {
         if (!price) return 'Цена не указана';
@@ -202,7 +215,6 @@ function ListingDetail() {
                         <button onClick={() => setShowReportModal(true)} className="report-btn">🚨 Пожаловаться</button>
                     </div>
 
-                    {/* Контакты */}
                     <div className="contacts-section">
                         <h3>Контакты</h3>
                         {listing.contact_phone ? (
@@ -230,11 +242,16 @@ function ListingDetail() {
                                 </Link>
                             </div>
                         )}
+
+                        {listing.user_id && currentUser?.user_id !== listing.user_id && (
+                            <div className="contact-write-row">
+                                <button className="btn-write" onClick={handleWrite}>💬 Написать продавцу</button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Отзывы */}
             <div className="reviews-section">
                 <h2>Отзывы ({reviews.length})</h2>
 

@@ -3,7 +3,6 @@ from .users import router as users_router
 from .listings import router as listings_router
 from .photos import router as photos_router
 from .favorites import router as favorites_router
-from .reviews import router as reviews_router
 from .complaints import router as complaints_router
 from .admin import router as admin_router
 from .moderation import router as moderation_router
@@ -22,7 +21,6 @@ routers = [
     listings_router,
     photos_router,
     favorites_router,
-    reviews_router,
     complaints_router,
     chat_router,
     agent_router,

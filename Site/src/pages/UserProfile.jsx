@@ -9,12 +9,13 @@ function UserProfile() {
     const { id } = useParams();
     const { user: currentUser } = useAuth();
     const navigate = useNavigate();
+
     const [profile, setProfile] = useState(null);
     const [listings, setListings] = useState([]);
-    const [reviews, setReviews] = useState([]);
+    const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('listings');
+    const [newComment, setNewComment] = useState('');
 
     const isOwnProfile = currentUser?.user_id === Number(id);
 
@@ -22,14 +23,14 @@ function UserProfile() {
         setLoading(true);
         setError(null);
         try {
-            const [userRes, listingsRes, reviewsRes] = await Promise.all([
+            const [userRes, listingsRes, commentsRes] = await Promise.all([
                 API.get(`/users/${id}`),
                 API.get('/listings/search', { params: { user_id: id } }),
-                API.get(`/reviews/user/${id}`)
+                API.get(`/comments/profile/${id}`)
             ]);
             setProfile(userRes.data);
             setListings(listingsRes.data?.items || listingsRes.data || []);
-            setReviews(reviewsRes.data || []);
+            setComments(commentsRes.data || []);
         } catch {
             setError('Не удалось загрузить данные');
         } finally {
@@ -42,17 +43,30 @@ function UserProfile() {
     const handleWrite = async () => {
         if (!currentUser) return navigate('/login');
         try {
-            // Найти или создать чат с пользователем
-            const agentRes = await API.get(`/agents/by-user/${id}`);
-            const agentId = agentRes.data?.agent_id;
-            if (agentId) {
-                const chatRes = await API.post('/chats/', { agent_id: agentId, title: `Чат с ${profile?.first_name}` });
-                navigate(`/chats?open=${chatRes.data.chat_id}`);
-            }
+            const res = await API.post('/chats/', { user_id: Number(id) });
+            navigate(`/chats?open=${res.data.chat_id}`);
         } catch {
-            // Если не агент — нельзя написать
-            alert('Пользователь не является риэлтором');
+            alert('Ошибка при создании чата');
         }
+    };
+
+    const submitComment = async () => {
+        if (!newComment.trim()) return;
+        try {
+            await API.post('/comments/', { profile_user_id: Number(id), content: newComment });
+            setNewComment('');
+            loadData();
+        } catch (err) {
+            alert(err.response?.data?.detail || 'Ошибка');
+        }
+    };
+
+    const deleteComment = async (commentId) => {
+        if (!window.confirm('Удалить комментарий?')) return;
+        try {
+            await API.delete(`/comments/${commentId}`);
+            loadData();
+        } catch {}
     };
 
     if (loading) return <div className="loader">Загрузка...</div>;
@@ -76,7 +90,7 @@ function UserProfile() {
                     </p>
                     <div className="profile-stats">
                         <span>🏠 {listings.length} объявлений</span>
-                        <span>📝 {reviews.length} отзывов</span>
+                        <span>💬 {comments.length} комментариев</span>
                     </div>
                     {!isOwnProfile && currentUser && (
                         <button className="btn-write" onClick={handleWrite}>💬 Написать</button>
@@ -84,44 +98,55 @@ function UserProfile() {
                 </div>
             </div>
 
-            <div className="profile-tabs">
-                <button className={activeTab === 'listings' ? 'active' : ''} onClick={() => setActiveTab('listings')}>
-                    Объявления ({listings.length})
-                </button>
-                <button className={activeTab === 'reviews' ? 'active' : ''} onClick={() => setActiveTab('reviews')}>
-                    Отзывы ({reviews.length})
-                </button>
+            {/* Объявления */}
+            <div className="profile-section">
+                <h2>Объявления ({listings.length})</h2>
+                {listings.length === 0 ? (
+                    <p className="no-data">Нет объявлений</p>
+                ) : (
+                    <div className="listings-grid">
+                        {listings.map(l => <ListingCard key={l.listing_id} listing={l} />)}
+                    </div>
+                )}
             </div>
 
-            {activeTab === 'listings' && (
-                <div className="profile-listings">
-                    {listings.length === 0 ? (
-                        <p className="no-data">Нет объявлений</p>
-                    ) : (
-                        <div className="listings-grid">
-                            {listings.map(l => <ListingCard key={l.listing_id} listing={l} />)}
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* Комментарии */}
+            <div className="profile-section">
+                <h2>Комментарии ({comments.length})</h2>
 
-            {activeTab === 'reviews' && (
-                <div className="profile-reviews">
-                    {reviews.length === 0 ? (
-                        <p className="no-data">Нет отзывов</p>
-                    ) : (
-                        reviews.map(r => (
-                            <div key={r.review_id} className="review-card">
-                                <div className="review-header">
-                                    <strong>{r.author_name || 'Пользователь'}</strong>
-                                    <span>{new Date(r.created_date).toLocaleDateString('ru-RU')}</span>
-                                </div>
-                                <p>{r.content}</p>
-                            </div>
-                        ))
-                    )}
-                </div>
-            )}
+                {currentUser && !isOwnProfile && (
+                    <div className="comment-form">
+                        <input
+                            placeholder="Напишите комментарий..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') submitComment(); }}
+                        />
+                        <button onClick={submitComment}>Отправить</button>
+                    </div>
+                )}
+
+                {comments.length === 0 && !currentUser && (
+                    <p className="no-data">Войдите, чтобы оставить комментарий</p>
+                )}
+
+                {comments.map(c => (
+                    <div key={c.comment_id} className="comment-card">
+                        <div className="comment-header">
+                            <strong>{c.author_name || 'Пользователь'}</strong>
+                            <span className="comment-date">
+                                {new Date(c.created_date).toLocaleDateString('ru-RU')}
+                            </span>
+                        </div>
+                        <p>{c.content}</p>
+                        {currentUser?.user_id === c.author_id && (
+                            <button className="btn-delete-comment" onClick={() => deleteComment(c.comment_id)}>
+                                🗑
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

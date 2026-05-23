@@ -3,8 +3,6 @@ from .user import UserCreate, UserUpdate, UserResponse
 from .listing import ListingCreate, ListingUpdate, ListingResponse
 from .photo import PhotoCreate, PhotoResponse
 from .favorite import FavoriteCreate, FavoriteResponse
-from .review import ReviewCreate, ReviewResponse
-from .review_response import ReviewResponseCreate, ReviewResponseOut
 from .comment import CommentCreate, CommentResponse
 from .complaint import ComplaintCreate, ComplaintUpdate, ComplaintResponse
 from .agent import AgentProfileCreate, AgentProfileUpdate, AgentProfileResponse

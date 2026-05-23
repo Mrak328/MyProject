@@ -62,29 +62,13 @@
     background: #219a52;
 }
 
-.profile-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 20px;
-    background: #f0f0f0;
-    padding: 4px;
-    border-radius: 10px;
-    width: fit-content;
+.profile-section {
+    margin-bottom: 30px;
 }
 
-.profile-tabs button {
-    padding: 10px 20px;
-    border: none;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.profile-tabs button.active {
-    background: white;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+.profile-section h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
 }
 
 .listings-grid {
@@ -93,31 +77,73 @@
     gap: 16px;
 }
 
-.review-card {
-    background: #f9f9f9;
-    padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 10px;
+.comment-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
-.review-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
+.comment-form input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
     font-size: 14px;
 }
 
-.review-header span {
-    color: #999;
+.comment-form button {
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
 }
 
-.review-card p {
+.comment-card {
+    background: #f9f9f9;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.comment-date {
+    color: #999;
+    font-size: 12px;
+}
+
+.comment-card p {
     margin: 0;
     color: #444;
+    font-size: 15px;
+}
+
+.btn-delete-comment {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.comment-card:hover .btn-delete-comment {
+    opacity: 1;
 }
 
 .no-data {
     text-align: center;
     color: #999;
-    padding: 40px;
+    padding: 30px;
 }

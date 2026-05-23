@@ -10,7 +10,7 @@ from app.crud.analytics import analytics_crud
 from app.schemas.listing import ListingCreate, ListingUpdate, ListingResponse
 from app.schemas.common import MessageResponse, PaginatedResponse
 from app.core.dependencies import get_current_user, get_current_user_optional
-from app.models import Users, Listing, Address, City, SearchStatistics
+from app.models import Users, Listing, Address, City, Region, SearchStatistics
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -57,6 +57,10 @@ async def search_listings(
     page_size: int = Query(20, ge=1, le=100),
     query: Optional[str] = None,
     city: Optional[str] = None,
+    city_id: Optional[int] = None,
+    region_id: Optional[int] = None,
+    country_id: Optional[int] = None,
+    user_id: Optional[int] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     min_area: Optional[float] = None,
@@ -75,20 +79,41 @@ async def search_listings(
 
     if query:
         query_builder = query_builder.filter(or_(Listing.title.ilike(f"%{query}%"), Listing.description.ilike(f"%{query}%")))
+
     if city:
         query_builder = query_builder.join(Address, Listing.address_id == Address.address_id).join(City, Address.city_id == City.city_id).filter(City.name.ilike(f"%{city}%"))
-    if min_price is not None: query_builder = query_builder.filter(Listing.price >= min_price)
-    if max_price is not None: query_builder = query_builder.filter(Listing.price <= max_price)
-    if min_area is not None: query_builder = query_builder.filter(Listing.total_area >= min_area)
-    if max_area is not None: query_builder = query_builder.filter(Listing.total_area <= max_area)
+    elif city_id is not None:
+        query_builder = query_builder.join(Address, Listing.address_id == Address.address_id).filter(Address.city_id == city_id)
+    elif region_id is not None:
+        query_builder = query_builder.join(Address, Listing.address_id == Address.address_id).join(City, Address.city_id == City.city_id).filter(City.region_id == region_id)
+    elif country_id is not None:
+        query_builder = query_builder.join(Address, Listing.address_id == Address.address_id).join(City, Address.city_id == City.city_id).join(Region, City.region_id == Region.region_id).filter(Region.country_id == country_id)
+
+    if user_id is not None:
+        query_builder = query_builder.filter(Listing.user_id == user_id)
+    if min_price is not None:
+        query_builder = query_builder.filter(Listing.price >= min_price)
+    if max_price is not None:
+        query_builder = query_builder.filter(Listing.price <= max_price)
+    if min_area is not None:
+        query_builder = query_builder.filter(Listing.total_area >= min_area)
+    if max_area is not None:
+        query_builder = query_builder.filter(Listing.total_area <= max_area)
     if rooms is not None:
-        if rooms >= 4: query_builder = query_builder.filter(Listing.rooms >= 4)
-        else: query_builder = query_builder.filter(Listing.rooms == rooms)
-    if floor is not None: query_builder = query_builder.filter(Listing.floor == floor)
-    if deal_type_id is not None: query_builder = query_builder.filter(Listing.deal_type_id == deal_type_id)
-    if property_type_id is not None: query_builder = query_builder.filter(Listing.property_type_id == property_type_id)
-    if market_type_id is not None: query_builder = query_builder.filter(Listing.market_type_id == market_type_id)
-    if renovation_condition_id is not None: query_builder = query_builder.filter(Listing.renovation_condition_id == renovation_condition_id)
+        if rooms >= 4:
+            query_builder = query_builder.filter(Listing.rooms >= 4)
+        else:
+            query_builder = query_builder.filter(Listing.rooms == rooms)
+    if floor is not None:
+        query_builder = query_builder.filter(Listing.floor == floor)
+    if deal_type_id is not None:
+        query_builder = query_builder.filter(Listing.deal_type_id == deal_type_id)
+    if property_type_id is not None:
+        query_builder = query_builder.filter(Listing.property_type_id == property_type_id)
+    if market_type_id is not None:
+        query_builder = query_builder.filter(Listing.market_type_id == market_type_id)
+    if renovation_condition_id is not None:
+        query_builder = query_builder.filter(Listing.renovation_condition_id == renovation_condition_id)
 
     sort_map = {"price_asc": Listing.price.asc(), "price_desc": Listing.price.desc(), "views_desc": Listing.views.desc(), "area_asc": Listing.total_area.asc(), "area_desc": Listing.total_area.desc(), "date_desc": Listing.publication_date.desc(), "date_asc": Listing.publication_date.asc()}
     query_builder = query_builder.order_by(sort_map.get(sort_by, Listing.publication_date.desc()))
@@ -96,23 +121,17 @@ async def search_listings(
     total = query_builder.count()
     listings = query_builder.offset(skip).limit(page_size).all()
 
-    # Сохранить запрос в search_statistics
-    search_query_text = query or city or ""
+    search_query_text = query or ""
     filters = {}
     for k, v in request.query_params.items():
         if v and k not in ('page', 'page_size'):
             filters[k] = v
 
     try:
-        stat = SearchStatistics(
-            user_id=None,
-            search_query=search_query_text,
-            filters_json=filters,
-            results_count=total
-        )
+        stat = SearchStatistics(user_id=None, search_query=search_query_text, filters_json=filters, results_count=total)
         db.add(stat)
         db.commit()
-    except Exception:
+    except:
         pass
 
     return {"items": [_enrich_listing(l, db) for l in listings], "total": total, "page": page, "size": page_size, "pages": (total + page_size - 1) // page_size if total > 0 else 0}
@@ -150,8 +169,10 @@ async def create_listing(listing_data: ListingCreate, request: Request, db: Sess
 @router.put("/{listing_id}", response_model=ListingResponse)
 async def update_listing(listing_id: int, listing_update: ListingUpdate, request: Request, db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)):
     listing = listing_crud.get(db, listing_id)
-    if not listing: raise HTTPException(status_code=404, detail="Объявление не найдено")
-    if listing.user_id != current_user.user_id: raise HTTPException(status_code=403, detail="Нет доступа")
+    if not listing:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+    if listing.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
     updated = listing_crud.update(db, listing, listing_update)
     action_log_crud.log(db, current_user.user_id, 3, listing_id=listing_id, ip_address=request.client.host, user_agent=request.headers.get("user-agent"))
     return _enrich_listing(updated, db)
@@ -160,8 +181,10 @@ async def update_listing(listing_id: int, listing_update: ListingUpdate, request
 @router.delete("/{listing_id}", response_model=MessageResponse)
 async def delete_listing(listing_id: int, request: Request, db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)):
     listing = listing_crud.get(db, listing_id)
-    if not listing: raise HTTPException(status_code=404, detail="Объявление не найдено")
-    if listing.user_id != current_user.user_id: raise HTTPException(status_code=403, detail="Нет доступа")
+    if not listing:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+    if listing.user_id != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
     action_log_crud.log(db, current_user.user_id, 4, listing_id=listing_id, ip_address=request.client.host, user_agent=request.headers.get("user-agent"))
     listing_crud.delete_obj(db, listing)
     return {"message": "Объявление удалено", "success": True}

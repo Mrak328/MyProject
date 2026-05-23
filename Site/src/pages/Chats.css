@@ -10,14 +10,92 @@
 }
 
 .chats-sidebar {
-    width: 280px;
+    width: 300px;
     border-right: 1px solid #e0e0e0;
     padding: 16px;
     overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .chats-sidebar h3 {
     margin-bottom: 12px;
+}
+
+.btn-new-chat {
+    width: 100%;
+    padding: 10px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+.btn-new-chat:hover {
+    background: #3d5068;
+}
+
+.agents-list {
+    margin-bottom: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.agent-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+
+.agent-info {
+    flex: 0 0 70%;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.agent-info:hover .agent-name {
+    text-decoration: underline;
+}
+
+.agent-name {
+    font-weight: 500;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agent-about {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agent-start-btn {
+    flex: 0 0 30%;
+    padding: 8px 10px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.agent-start-btn:hover {
+    background: #219a52;
 }
 
 .chat-item {
@@ -33,8 +111,36 @@
 .chat-item:hover { background: #f5f5f5; }
 .chat-item.active { background: #e8f0fe; }
 
-.badge-active { color: #27ae60; font-size: 12px; }
-.badge-closed { color: #999; font-size: 12px; }
+.chat-item-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.badge-active { color: #27ae60; font-size: 10px; }
+.badge-closed { color: #999; font-size: 10px; }
+
+.btn-delete-chat {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.btn-delete-chat:hover {
+    background: #1a252f;
+}
 
 .chats-main {
     flex: 1;
@@ -50,8 +156,34 @@
     border-bottom: 1px solid #e0e0e0;
 }
 
-.chat-header h3 { margin: 0; }
-.chat-header button { background: none; border: none; font-size: 18px; cursor: pointer; }
+.chat-header h3 { margin: 0; font-size: 16px; }
+
+.chat-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chat-header-actions button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.btn-header-delete {
+    font-size: 16px;
+    padding: 4px 8px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-header-delete:hover {
+    background: #1a252f;
+}
 
 .messages-list {
     flex: 1;
@@ -67,6 +199,7 @@
     padding: 10px 14px;
     border-radius: 12px;
     font-size: 15px;
+    word-wrap: break-word;
 }
 
 .message.mine {
@@ -109,6 +242,18 @@
     border: none;
     border-radius: 10px;
     cursor: pointer;
+    font-weight: 500;
+}
+
+.chat-input button:hover {
+    background: #3d5068;
+}
+
+.chat-closed-notice {
+    padding: 16px;
+    text-align: center;
+    color: #999;
+    border-top: 1px solid #e0e0e0;
 }
 
 .no-chat {
@@ -117,23 +262,31 @@
     align-items: center;
     justify-content: center;
     color: #999;
+    text-align: center;
+}
+
+.no-chat p {
+    margin: 4px 0;
 }
 
 .no-data {
     color: #999;
     text-align: center;
     padding: 20px;
+    font-size: 14px;
 }
 
 @media (max-width: 768px) {
     .chats-page {
         flex-direction: column;
         height: auto;
+        min-height: calc(100vh - 64px - 80px);
     }
 
     .chats-sidebar {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid #e0e0e0;
+        max-height: 40vh;
     }
 }
