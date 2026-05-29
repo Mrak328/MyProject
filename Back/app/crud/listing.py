@@ -147,25 +147,20 @@ class CRUDListing(CRUDBase[Listing]):
             db.rollback()
             return None
 
-    def create(
-            self,
-            db: Session,
-            obj_in: ListingCreate,
-            user_id: int
-    ) -> Listing:
-        """Создание объявления с user_id из токена"""
-        data = obj_in.dict(
-            exclude={'address_id', 'country_id', 'region_id', 'city_id', 'district_id', 'street_id', 'house_id',
-                     'apartment_id'})
+    def create(self, db: Session, obj_in: ListingCreate, user_id: int) -> Listing:
+        data = obj_in.dict(exclude={
+            'address_id', 'country_id', 'region_id', 'city_id',
+            'district_id', 'street_id', 'house_id', 'apartment_id',
+            'listing_status_id'
+        })
 
         db_obj = Listing(
             user_id=user_id,
-            listing_status_id=self.ACTIVE_STATUS_ID,
+            listing_status_id=1,
             moderated=False,
             **data
         )
 
-        # Если передан готовый address_id
         if obj_in.address_id:
             db_obj.address_id = obj_in.address_id
 

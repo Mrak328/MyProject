@@ -39,39 +39,32 @@ def _save_file(file: UploadFile, listing_id: int) -> str:
 async def upload_photo(
     listing_id: int,
     file: UploadFile = File(...),
-    title: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    """Загрузить фото к объявлению"""
     listing = listing_crud.get(db, listing_id)
     if not listing:
         raise HTTPException(status_code=404, detail="Объявление не найдено")
     if listing.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="Нет доступа")
 
-    # Проверка размера файла
     contents = await file.read()
     file_size = len(contents)
-    await file.seek(0)  # сброс указателя для последующего чтения
+    await file.seek(0)
 
     if file_size > settings.MAX_UPLOAD_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Файл слишком большой. Максимум: {settings.MAX_UPLOAD_SIZE // (1024*1024)} МБ"
-        )
+        raise HTTPException(status_code=400, detail=f"Файл слишком большой")
 
     file_url = _save_file(file, listing_id)
 
     photo = photo_crud.create(db, {
         "listing_id": listing_id,
         "file_url": file_url,
-        "title": title or file.filename,
+        "title": file.filename,
         "file_size": file_size
     })
 
     return photo
-
 
 @router.post("/upload/{listing_id}/multiple", response_model=List[PhotoResponse])
 async def upload_multiple_photos(

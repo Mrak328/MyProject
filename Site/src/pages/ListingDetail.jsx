@@ -213,7 +213,12 @@ function ListingDetail() {
                     <div className="action-buttons">
                         <FavoriteButton listingId={Number(id)} />
                         <button onClick={() => setShowReportModal(true)} className="report-btn">🚨 Пожаловаться</button>
+
+                        {listing.user_id === currentUser?.user_id && (
+                            <Link to={`/edit-listing/${listing.listing_id}`} className="btn-edit">✏️ Редактировать</Link>
+                        )}
                     </div>
+
 
                     <div className="contacts-section">
                         <h3>Контакты</h3>

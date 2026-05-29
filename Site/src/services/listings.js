@@ -23,8 +23,5 @@ export const searchListings = (filters = {}, page = 1, pageSize = 20) => {
         .catch(() => ({ items: [], total: 0, page: 1, pages: 0 }));
 };
 
-export const getListingDetail = (id) =>
-    API.get(`/listings/${id}`).then(r => r.data).catch(() => null);
-
 export const registerView = (listingId) =>
     API.post(`/listings/${listingId}/view`).catch(() => {});

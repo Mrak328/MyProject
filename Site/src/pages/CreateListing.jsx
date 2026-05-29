@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
+import AddressSelect from '../components/AddressSelect';
 import { useAuth } from '../context/AuthContext';
 import './CreateListing.css';
 
@@ -9,36 +10,35 @@ const PROPERTY_TYPES = [
     { id: 4, label: 'Офис' }, { id: 5, label: 'Участок' }
 ];
 
+const RENOVATION_CONDITIONS = [
+    { id: 1, label: 'Без ремонта' }, { id: 2, label: 'Косметический' },
+    { id: 3, label: 'Евроремонт' }, { id: 4, label: 'Дизайнерский' },
+    { id: 5, label: 'Черновая отделка' }, { id: 6, label: 'Предчистовая' },
+    { id: 7, label: 'Чистовая' }
+];
+
 function CreateListing() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [photos, setPhotos] = useState([]);
+    const [photosCount, setPhotosCount] = useState(0);
+    const fileInputRef = useRef(null);
+    const [addressData, setAddressData] = useState({});
 
     const [form, setForm] = useState({
         title: '', description: '', price: '', total_area: '', rooms: '',
         floor: '', max_floor: '', property_type_id: '1', deal_type_id: '1',
-        renovation_condition_id: '', contact_person: '', contact_phone: '',
-        city_id: '', street: '', house_number: ''
+        renovation_condition_id: '', market_type_id: '', contact_person: '',
+        contact_phone: '', developer_name: ''
     });
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handlePhotoUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        for (const file of files) {
-            const formData = new FormData();
-            formData.append('file', file);
-            try {
-                // Сначала создаём объявление-заглушку или загружаем после создания
-                setPhotos((prev) => [...prev, file]);
-            } catch {
-                setError('Ошибка загрузки фото');
-            }
-        }
+    const handlePhotoUpload = (e) => {
+        setPhotosCount(e.target.files.length);
     };
 
     const handleSubmit = async (e) => {
@@ -47,7 +47,7 @@ function CreateListing() {
         setError('');
 
         try {
-            const res = await API.post('/listings/', {
+            const payload = {
                 title: form.title,
                 description: form.description,
                 price: Number(form.price),
@@ -58,22 +58,29 @@ function CreateListing() {
                 property_type_id: Number(form.property_type_id),
                 deal_type_id: Number(form.deal_type_id),
                 renovation_condition_id: form.renovation_condition_id ? Number(form.renovation_condition_id) : undefined,
+                market_type_id: form.market_type_id ? Number(form.market_type_id) : undefined,
                 contact_person: form.contact_person || user?.first_name,
-                contact_phone: form.contact_phone || user?.phone_number
-            });
+                contact_phone: form.contact_phone || user?.phone_number,
+                developer_name: form.developer_name || undefined,
+                ...addressData
+            };
 
+            const res = await API.post('/listings/', payload);
             const listingId = res.data.listing_id;
 
-            // Загружаем фото к созданному объявлению
-            for (const file of photos) {
-                const fd = new FormData();
-                fd.append('file', file);
-                await API.post(`/photos/upload/${listingId}`, fd);
+            const files = fileInputRef.current?.files;
+            if (files) {
+                for (const file of files) {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    await API.post(`/photos/upload/${listingId}`, fd);
+                }
             }
 
             navigate(`/listing/${listingId}`);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Ошибка создания объявления');
+            const msg = err.response?.data?.detail;
+            setError(typeof msg === 'string' ? msg : 'Ошибка создания объявления');
         } finally {
             setLoading(false);
         }
@@ -83,11 +90,9 @@ function CreateListing() {
         <div className="create-listing-page">
             <h1>Создать объявление</h1>
             <form onSubmit={handleSubmit} className="create-listing-form">
-                <div className="form-row">
-                    <div className="form-group">
-                        <label>Название</label>
-                        <input type="text" name="title" value={form.title} onChange={handleChange} required />
-                    </div>
+                <div className="form-group">
+                    <label>Название</label>
+                    <input type="text" name="title" value={form.title} onChange={handleChange} required />
                 </div>
 
                 <div className="form-row">
@@ -134,9 +139,30 @@ function CreateListing() {
 
                 <div className="form-row">
                     <div className="form-group">
-                        <label>Описание</label>
-                        <textarea name="description" value={form.description} onChange={handleChange} rows="4" />
+                        <label>Ремонт</label>
+                        <select name="renovation_condition_id" value={form.renovation_condition_id} onChange={handleChange}>
+                            <option value="">Не выбрано</option>
+                            {RENOVATION_CONDITIONS.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+                        </select>
                     </div>
+                    <div className="form-group">
+                        <label>Рынок</label>
+                        <select name="market_type_id" value={form.market_type_id} onChange={handleChange}>
+                            <option value="">Не выбрано</option>
+                            <option value="1">Новостройка</option>
+                            <option value="2">Вторичка</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="form-group">
+                    <label>Адрес</label>
+                    <AddressSelect onChange={setAddressData} />
+                </div>
+
+                <div className="form-group">
+                    <label>Описание</label>
+                    <textarea name="description" value={form.description} onChange={handleChange} rows="4" />
                 </div>
 
                 <div className="form-row">
@@ -150,15 +176,18 @@ function CreateListing() {
                     </div>
                 </div>
 
-                <div className="form-row">
-                    <div className="form-group">
-                        <label>Фото</label>
-                        <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} />
-                        {photos.length > 0 && <p>Выбрано фото: {photos.length}</p>}
-                    </div>
+                <div className="form-group">
+                    <label>Застройщик</label>
+                    <input type="text" name="developer_name" value={form.developer_name} onChange={handleChange} />
                 </div>
 
-                {error && <div className="error-message">{error}</div>}
+                <div className="form-group">
+                    <label>Фото</label>
+                    <input type="file" multiple accept="image/*" ref={fileInputRef} onChange={handlePhotoUpload} />
+                    {photosCount > 0 && <p>Выбрано фото: {photosCount}</p>}
+                </div>
+
+                {error && <div className="error-message">{typeof error === 'string' ? error : JSON.stringify(error)}</div>}
 
                 <button type="submit" disabled={loading} className="submit-btn">
                     {loading ? 'Создание...' : 'Опубликовать объявление'}

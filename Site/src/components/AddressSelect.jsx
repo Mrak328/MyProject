@@ -20,8 +20,8 @@ function AddressSelect({ onChange }) {
         getCountries().then(setCountries);
         getRegions(1).then(data => {
             setRegions(data);
-            const kirov = data.find(r => r.name === 'Кировская область');
-            if (kirov) setRegionId(String(kirov.id));
+            const kirovRegion = data.find(r => r.name === 'Кировская область');
+            if (kirovRegion) setRegionId(String(kirovRegion.id));
         });
     }, []);
 
@@ -69,28 +69,53 @@ function AddressSelect({ onChange }) {
         });
     }, [countryId, regionId, cityId, districtId, streetId, houseId]);
 
+    const handleCountryChange = (e) => {
+        setCountryId(e.target.value);
+        setRegionId('');
+        setCityId('');
+    };
+
+    const handleRegionChange = (e) => {
+        setRegionId(e.target.value);
+        setCityId('');
+    };
+
+    const handleCityChange = (e) => {
+        setCityId(e.target.value);
+        setDistrictId('');
+    };
+
+    const handleStreetChange = (e) => {
+        setStreetId(e.target.value);
+    };
+
     return (
         <div className="address-select">
-            <select value={countryId} onChange={(e) => setCountryId(e.target.value)}>
+            <select value={countryId} onChange={handleCountryChange}>
                 <option value="">Страна</option>
                 {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select value={regionId} onChange={(e) => setRegionId(e.target.value)} disabled={!countryId}>
+
+            <select value={regionId} onChange={handleRegionChange} disabled={!countryId}>
                 <option value="">Регион</option>
                 {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
-            <select value={cityId} onChange={(e) => setCityId(e.target.value)} disabled={!regionId}>
+
+            <select value={cityId} onChange={handleCityChange} disabled={!regionId}>
                 <option value="">Город</option>
                 {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+
             <select value={districtId} onChange={(e) => setDistrictId(e.target.value)} disabled={!cityId}>
                 <option value="">Район</option>
                 {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <select value={streetId} onChange={(e) => setStreetId(e.target.value)} disabled={!cityId}>
+
+            <select value={streetId} onChange={handleStreetChange} disabled={!cityId}>
                 <option value="">Улица</option>
                 {streets.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+
             <select value={houseId} onChange={(e) => setHouseId(e.target.value)} disabled={!streetId}>
                 <option value="">Дом</option>
                 {houses.map(h => <option key={h.id} value={h.id}>{h.number}</option>)}

@@ -18,6 +18,7 @@ import Moderation from './pages/Moderation';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminSearch from './pages/AdminSearch';
 import Chats from './pages/Chats';
+import EditListing from './pages/EditListing';
 
 function App() {
     return (
@@ -36,6 +37,7 @@ function App() {
                                 <Route path="/create-listing" element={<ProtectedRoute><CreateListing /></ProtectedRoute>} />
                                 <Route path="/user/:id" element={<UserProfile />} />
                                 <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
+                                <Route path="/edit-listing/:id" element={<ProtectedRoute><EditListing /></ProtectedRoute>} />
 
                                 {/* Админ */}
                                 <Route path="/admin" element={<ProtectedRoute roles={[1]}><AdminPanel /></ProtectedRoute>} />

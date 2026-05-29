@@ -31,7 +31,7 @@ function Header() {
                 <div className="auth-buttons">
                     {isAuthenticated ? (
                         <>
-                            <span className="user-name">{user.first_name}</span>
+                            <Link to={`/user/${user.user_id}`} className="user-name">{user.first_name}</Link>
                             <button onClick={handleLogout} className="logout-btn">Выйти</button>
                         </>
                     ) : (

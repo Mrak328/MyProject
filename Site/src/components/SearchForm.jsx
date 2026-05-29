@@ -81,6 +81,13 @@ function SearchForm({ filters, onFilterChange, onSearch }) {
                 <div className="filters-row">
                     <AddressSelect onChange={handleAddressChange} />
 
+                    <select value={localFilters.sortBy || 'date_desc'} onChange={handleChange} name="sortBy" className="filter-select">
+                        <option value="date_desc">📅 Новые</option>
+                        <option value="price_asc">💰 Дешевле</option>
+                        <option value="price_desc">💎 Дороже</option>
+                        <option value="views_desc">🔥 Популярные</option>
+                    </select>
+
                     <select value={localFilters.rooms || ''} onChange={(e) => handleRoomsChange(e.target.value ? Number(e.target.value) : null)} className="filter-select">
                         <option value="">Комнаты</option>
                         <option value="1">1</option>

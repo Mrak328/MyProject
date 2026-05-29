@@ -173,16 +173,19 @@
 }
 
 .report-btn {
-    padding: 10px 20px;
-    background: #f0f0f0;
+    padding: 12px 20px;
+    background: #e74c3c;
+    color: white;
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s;
 }
 
 .report-btn:hover {
-    background: #e0e0e0;
+    background: #c0392b;
 }
 
 .contacts-section {
@@ -429,4 +432,20 @@
 
 .btn-write:hover {
     background: #219a52;
+}
+.btn-edit {
+    padding: 10px 20px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    color: #333;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-edit:hover {
+    background: #e0e0e0;
 }
